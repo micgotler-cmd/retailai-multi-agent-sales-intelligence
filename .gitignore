@@ -1,0 +1,73 @@
+# Secrets and local config
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+service_account*.json
+kaggle.json
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# Datasets (never commit; download from Kaggle separately)
+/data/
+m5-forecasting-accuracy/
+sales_train_validation.csv
+sales_train_evaluation.csv
+sales_train_validation.csv.zip
+calendar.csv
+sell_prices.csv
+sample_submission.csv
+*.parquet
+
+# Generated artifacts and models (keep the folder only)
+artifacts/*
+!artifacts/.gitkeep
+*.joblib
+*.pkl
+*.pickle
+
+# Local vector databases and indexes
+chroma/
+.chroma/
+*.faiss
+vector_store/
+storage/
+db_storage/
+
+# Local databases
+*.sqlite
+*.sqlite3
+*.db
+
+# Logs and temporary files
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+
+# Claude Code local state
+.claude/settings.local.json
+.claude/plans/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
