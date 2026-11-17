@@ -80,18 +80,34 @@ One focused task at a time, each ending in a reviewed pull request:
 
 Suggested task order: environment and scaffold, config and logging, data inspection, ETL and validation, contract, features with leakage tests, models and evaluation, tool wrappers, Crew 1, Crew 2, Flow and gates, LocalRepository, Streamlit pages, then the optional parts. Do not generate the whole application in one step. Conventions: [../CLAUDE.md](../CLAUDE.md).
 
-## Git workflow (D-18, D-19)
+## Git workflow (D-18, D-19, D-23)
 
-`main` is the default and protected branch; short-lived `feature/<area>-<description>` branches; one PR per task, reviewed by the other developer; squash merge. Repository `retailai-multi-agent-sales-intelligence`, private initially. The remote repository is created only after explicit approval; GitHub CLI is already authenticated.
+```mermaid
+gitGraph
+    commit id: "initial docs"
+    branch dev
+    commit id: "dev created"
+    branch feature/data-ingestion
+    commit id: "work"
+    checkout dev
+    merge feature/data-ingestion id: "PR into dev"
+    checkout main
+    merge dev id: "PR dev into main (milestone)"
+```
 
-**Branch names:** `feature/data-ingestion`, `feature/analyst-crew`, `feature/ml-forecasting`, `feature/rag-recommendations`, `feature/supabase-integration`, `docs/update-architecture`. Small focused commits; PR descriptions say what changed, how it was tested and which `docs/progress.md` rows were updated; no merge without the other developer's review.
+- `main`: production, default branch, PR from `dev` only. `dev`: integration; every feature branch starts here.
+- Steps: 1. branch from `dev`; 2. implement and test; 3. update `docs/progress.md`; 4. PR into `dev`; 5. review and validate; 6. merge; 7. at a stable milestone PR `dev` into `main`; 8. merge after final validation and approval.
+- **Branch names:** `feature/data-ingestion`, `feature/analyst-crew`, `feature/ml-forecasting`, `feature/rag-recommendations`, `feature/supabase-integration`, `docs/update-architecture`. Small focused commits; PR descriptions say what changed, how it was tested and which `docs/progress.md` rows were updated.
+- Repository `retailai-multi-agent-sales-intelligence`; its visibility and branch protection are managed by the repo owner. No automatic deployments and no separate Supabase environments yet.
+- Branch protection (pending approval): PRs required for `main` and `dev`, one approving review, no force pushes, no branch deletion. On a two-person team the PR author cannot approve their own PR, so the other developer must be a collaborator (T-06).
 
 **Second developer (after being invited, T-06):**
 ```
-git clone https://github.com/<owner>/retailai-multi-agent-sales-intelligence.git
+git clone https://github.com/micgotler-cmd/retailai-multi-agent-sales-intelligence.git
 cd retailai-multi-agent-sales-intelligence
+git checkout dev && git pull
 git checkout -b feature/<task>      # work, commit, then:
-git push -u origin feature/<task>   # open a Pull Request into main
+git push -u origin feature/<task>   # open a Pull Request into dev
 ```
 Copy `.env.example` to `.env` locally and fill in your own keys; never commit `.env`.
 

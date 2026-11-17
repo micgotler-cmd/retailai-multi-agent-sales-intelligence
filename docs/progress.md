@@ -18,7 +18,7 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 
 | ID | Component | Task | Owner | Status | Branch / PR | Tests | Notes |
 |---|---|---|---|---|---|---|---|
-| P-01 | Setup | Repository and environment setup | TBD | In Progress | `main` (initial commit pending) | Not Applicable | Local folders, `.gitignore`, `.env.example`, docs done; GitHub repo not created yet; Python environment not set up (D-13, T-06) |
+| P-01 | Setup | Repository and environment setup | TBD | In Progress | `main` (`82aeec9`), `dev` (local, not pushed) | Not Applicable | Repo is live and public; initial docs pushed to `main`. Remaining: push `dev`, branch protection (D-23), Python environment (D-13), collaborator (T-06) |
 | P-02 | Data | M5 dataset ingestion | TBD | Not Started | | Not Run | Needs Kaggle download and usage-rights check (T-04); store and items TBD (T-02, T-03) |
 | P-03 | Data | Data validation and cleaning | TBD | Not Started | | Not Run | Null-price policy TBD (T-13) |
 | P-04 | Crews | Data Analyst Crew | TBD | Not Started | | Not Run | M-01 to M-03 |
@@ -36,23 +36,33 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | P-16 | Testing | End-to-end validation | TBD | Not Started | | Not Run | Also a phase gate, see [../CLAUDE.md](../CLAUDE.md) |
 | P-17 | Delivery | Final presentation and demo | TBD | Not Started | | Not Applicable | 10-12 slides and a demo of at most 5 minutes (M-14) |
 
+## Branches and Pull Requests
+
+| Branch | Base | Purpose | Status | PR |
+|---|---|---|---|---|
+| `main` | n/a | Production, default branch (D-23) | Exists on GitHub, initial commit `82aeec9` | n/a |
+| `dev` | `main` | Integration branch (D-23) | Created locally; not pushed until approved | PR `dev` into `main` will carry the branching-strategy docs |
+
+Add one row per feature branch and its PR (target `dev`) as work starts.
+
 ## Completed Work
 
 | Date | Milestone | PR |
 |---|---|---|
-| 2026-11-17 | Documentation set created (README, CLAUDE.md, 10 documents under `docs/`) and internal links checked | None yet (initial commit) |
+| 2026-11-17 | Documentation set created (README, CLAUDE.md, 10 documents under `docs/`) and internal links checked | Initial commit `82aeec9` on `main` (no PR) |
+| 2026-11-17 | Public GitHub repository created and `main` pushed | n/a |
 
 ## Current Blockers
 
 | Blocker | Affects | Needed from |
 |---|---|---|
-| Remote GitHub repository not yet created | P-01 | Approval to create (see the setup report) |
+| `dev` branch and branch protection not yet on GitHub | P-01 | Owner approval of the remote setup |
 | Open items T-01 to T-19 | Several tasks | Developers, see [decisions.md](decisions.md) |
 
 ## Next Actions
 
-1. Approve and create the private GitHub repository, push the initial commit.
-2. Second developer clones the repository (T-06 for the collaborator invite).
+1. Approve the remote branch setup: push `dev`, enable branch protection (D-23), then merge the branching docs into `main` by PR.
+2. Invite the second developer (T-06) so PR reviews are possible.
 3. Resolve the Week 1 open items: T-01, T-02, T-03, T-04, T-11, T-12.
 4. Set up the Python environment (D-13), then run the read-only M5 dataset inspection (first implementation task, see [implementation-plan.md](implementation-plan.md)).
 

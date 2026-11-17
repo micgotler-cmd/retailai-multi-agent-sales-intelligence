@@ -32,6 +32,16 @@ A Streamlit app shows data quality, EDA, insights, forecasts, model evaluation, 
 
 Original inputs kept for reference: [Word specification](docs/RetailAI_Project_Specification.docx), [instructor brief](docs/final_project_brief_1.html). Contributor and Claude Code conventions: [CLAUDE.md](CLAUDE.md).
 
+## Branching strategy
+
+| Branch | Purpose |
+|---|---|
+| `main` | Stable, production-ready version; GitHub default branch. Changes arrive only by Pull Request from `dev` |
+| `dev` | Shared integration and testing branch; all new work starts here |
+| `feature/<task>`, `docs/<topic>` | Short-lived branches created from `dev`, merged back into `dev` by Pull Request |
+
+Flow: branch from `dev`, implement and test, update [docs/progress.md](docs/progress.md), open a PR into `dev`, get review, merge. At a stable milestone, open a PR from `dev` into `main` after final validation. Details: [implementation-plan.md](docs/implementation-plan.md) and decision D-23 in [decisions.md](docs/decisions.md).
+
 ## Setup and run
 
 TBD (see decisions.md). Setup, environment and run commands will be added when the first code is merged (Python version and tooling are tracked in [decisions.md](docs/decisions.md)). Datasets are downloaded separately from Kaggle and are never committed. API keys go in a local `.env` file that is never committed.
