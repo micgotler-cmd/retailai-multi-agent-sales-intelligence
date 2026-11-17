@@ -25,10 +25,11 @@ Single place for architectural decisions and every `TBD`. Requirements are in [p
 | D-15 | Connect Supabase (migrations, `SupabaseRepository`, Streamlit history) | Deferred | Spec: week 3 or later, after the local MVP works | [database-design.md](database-design.md) |
 | D-16 | Build Agent 7 and RAG | Deferred | Start after the MVP gate (end of week 3, end-to-end local run); 4-6 h timebox | [rag-and-recommendations.md](rag-and-recommendations.md) |
 | D-17 | Cloud deployment (Streamlit Cloud / Railway) | Deferred | Optional in the brief and spec | [implementation-plan.md](implementation-plan.md) |
-| D-18 | Git workflow: `main` plus short-lived feature branches, one PR per task, reviewed by the other developer | Proposed | Brief requires PRs; spec s13 requires a documented PR from each developer | [implementation-plan.md](implementation-plan.md) |
+| D-18 | Git workflow: one PR per task, reviewed by the other developer (branch model is defined in D-23) | Proposed | Brief requires PRs; spec s13 requires a documented PR from each developer | [implementation-plan.md](implementation-plan.md) |
 | D-19 | GitHub repo `retailai-multi-agent-sales-intelligence`, private initially, default branch `main` | Approved | Team instruction. Creation still needs explicit go-ahead | [implementation-plan.md](implementation-plan.md) |
 | D-21 | Repository layout: `src/{agents,crews,flows,data,ml,rag,repositories,utils}`, `app/`, `tests/{unit,integration,e2e}`, `knowledge/`, `artifacts/`, `config/` | Approved | Team instruction; supersedes the earlier proposed layout in the first docs draft | [architecture.md](architecture.md) |
 | D-22 | Progress is tracked in `docs/progress.md`, updated in the relevant PR | Approved | Team instruction | [progress.md](progress.md) |
+| D-23 | Two permanent branches: `main` (production, default branch) and `dev` (integration). Feature branches start from `dev` and merge into `dev` by PR; `dev` merges into `main` by PR at stable milestones; no direct commits to `main` after the initial setup. No automatic deployments and no separate Supabase environments yet | Approved | Team instruction; remote branch protection pending approval | [implementation-plan.md](implementation-plan.md) |
 | D-20 | Documentation layout: requirements only in `project-specification.md`, decisions only here, other docs cross-reference | Approved | Team instruction | [../README.md](../README.md) |
 
 ## Open items (TBD)

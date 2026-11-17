@@ -44,4 +44,10 @@ Do not duplicate requirements in other files; link to them.
 
 ## Git workflow
 
-Feature branches off `main`, one PR per task, reviewed by the other developer. Details: [docs/implementation-plan.md](docs/implementation-plan.md). Progress is tracked in [docs/progress.md](docs/progress.md); update it in the relevant PR.
+Two permanent branches (D-23): `main` is production and the default branch; `dev` is the integration branch.
+- Never commit directly to `main` (or `dev`); work on a feature branch created from `dev` (`feature/<task>`, `docs/<topic>`).
+- Open PRs into `dev`; `dev` goes into `main` by PR at a stable milestone, only after the phase gate above has passed and the other developer has approved.
+- Update `docs/progress.md` in the same PR. Small, focused commits and clear PR descriptions.
+- Do not create or change remote branches, branch protection or deployments without approval.
+
+Details: [docs/implementation-plan.md](docs/implementation-plan.md). Progress is tracked in [docs/progress.md](docs/progress.md); update it in the relevant PR.
