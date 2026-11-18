@@ -45,6 +45,8 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 
 Add one row per feature branch and its PR (target `dev`) as work starts.
 
+| `docs/add-simple-plan` | `dev` | Add the simple-language plan overview (`project-plan-simple.html`) | In review | PR into `dev`, then `dev` into `main` |
+
 ## Completed Work
 
 | Date | Milestone | PR |
@@ -88,5 +90,7 @@ Update this file in the same PR whenever:
 - a PR is merged,
 - a blocker is found or resolved,
 - a milestone is reached.
+
+Also refresh [project-plan-simple.html](project-plan-simple.html) (the plain-language overview, section "Where we are now") whenever the status changes.
 
 Mark a task Completed only after the work has been done and validated, with its tests Passed. Generating files does not count as completion.
