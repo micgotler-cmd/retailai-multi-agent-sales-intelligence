@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RetailAI: The Plan in Simple Words</title>
+<style>
+  :root{
+    --bg:#f7f8fa; --card:#ffffff; --ink:#1c2430; --muted:#5b6678; --line:#e1e5ec;
+    --accent:#2f5bd8; --accent-soft:#e8eefc;
+    --must:#1f7a4d; --must-soft:#e3f4ea;
+    --opt:#a35a00; --opt-soft:#fdf0dc;
+    --stop:#b42318; --stop-soft:#fde8e6;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#12161d; --card:#1a2029; --ink:#e8ecf2; --muted:#9aa5b6; --line:#2b3340;
+      --accent:#7aa2ff; --accent-soft:#1d2a47;
+      --must:#5fd39a; --must-soft:#14301f;
+      --opt:#f0b35a; --opt-soft:#35270f;
+      --stop:#ff8f85; --stop-soft:#3a1714;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:900px;margin:0 auto;padding:32px 20px 64px}
+  header h1{font-size:2rem;margin:0 0 6px}
+  header p{color:var(--muted);margin:0;font-size:1.05rem}
+  nav{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0 8px}
+  nav a{color:var(--accent);background:var(--accent-soft);text-decoration:none;padding:5px 12px;border-radius:999px;font-size:.88rem}
+  section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-top:20px}
+  h2{margin:0 0 4px;font-size:1.35rem}
+  h2 .n{display:inline-block;background:var(--accent);color:#fff;border-radius:8px;width:28px;height:28px;line-height:28px;text-align:center;font-size:.9rem;margin-right:8px}
+  .lead{color:var(--muted);margin:0 0 14px}
+  h3{margin:18px 0 6px;font-size:1.02rem}
+  ul{margin:6px 0 6px 20px;padding:0}
+  li{margin:3px 0}
+  .tag{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.03em;padding:2px 8px;border-radius:6px;vertical-align:middle}
+  .tag.must{background:var(--must-soft);color:var(--must)}
+  .tag.opt{background:var(--opt-soft);color:var(--opt)}
+  .tag.stop{background:var(--stop-soft);color:var(--stop)}
+  .callout{background:var(--accent-soft);border-left:4px solid var(--accent);padding:10px 14px;border-radius:8px;margin:14px 0}
+  .callout.warn{background:var(--opt-soft);border-left-color:var(--opt)}
+  code{background:var(--accent-soft);padding:1px 6px;border-radius:5px;font-size:.88em}
+  /* pipeline */
+  .flow{display:flex;flex-direction:column;gap:0;margin:14px 0}
+  .step{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--bg)}
+  .step b{display:block}
+  .step small{color:var(--muted)}
+  .arrow{text-align:center;color:var(--muted);line-height:1.2;padding:3px 0}
+  .crew{border:2px solid var(--accent);border-radius:14px;padding:12px;background:var(--accent-soft)}
+  .crew>b{display:block;margin-bottom:8px}
+  .agents{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+  .agent{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.92rem}
+  .agent i{font-style:normal;color:var(--muted);display:block;font-size:.82rem}
+  .gate{border:2px dashed var(--stop);background:var(--stop-soft);border-radius:12px;padding:10px 14px}
+  .a7{border:2px solid var(--opt);background:var(--opt-soft);border-radius:14px;padding:12px}
+  /* tables */
+  .scroll{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;font-size:.93rem}
+  th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em}
+  .weeks{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:10px}
+  .week{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--bg)}
+  .week h3{margin-top:0}
+  .branches{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+  .br{border-radius:10px;padding:8px 14px;border:1px solid var(--line);background:var(--bg)}
+  .br.main{border-color:var(--must);background:var(--must-soft)}
+  .br.dev{border-color:var(--accent);background:var(--accent-soft)}
+  footer{color:var(--muted);font-size:.85rem;margin-top:28px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>RetailAI: the plan in simple words</h1>
+  <p>Multi-Agent Sales Intelligence. A 4-week final project for two developers.</p>
+</header>
+
+<nav>
+  <a href="#idea">The idea</a>
+  <a href="#pipeline">How it works</a>
+  <a href="#data">Data &amp; forecast</a>
+  <a href="#extras">Optional parts</a>
+  <a href="#app">The app</a>
+  <a href="#weeks">4-week plan</a>
+  <a href="#git">Git rules</a>
+  <a href="#status">Where we are</a>
+</nav>
+
+<section id="idea">
+  <h2><span class="n">1</span>The idea</h2>
+  <p class="lead">What are we building, and why?</p>
+  <p>A store wants to know two things: <b>what happened</b> in its sales, and <b>what will probably happen next</b>.
+  RetailAI takes real sales data, cleans it, explains it, and predicts how many units of each product will sell in the <b>next 28 days</b>.</p>
+  <ul>
+    <li><b>Data:</b> the public Kaggle <b>M5</b> dataset (Walmart sales). We start small: <b>one store</b> and <b>20&ndash;50 products</b>.</li>
+    <li><b>Tools:</b> Python, CrewAI (AI agents), scikit-learn (machine learning), Streamlit (the app).</li>
+    <li><b>Team:</b> two developers, working with Claude Code, one small reviewed step at a time.</li>
+  </ul>
+  <div class="callout"><b>Golden rule:</b> normal Python code does all the math. The AI agents decide what to run, read the results, and explain them in words. They never invent numbers.</div>
+</section>
+
+<section id="pipeline">
+  <h2><span class="n">2</span>How it works: 7 agents in a chain</h2>
+  <p class="lead">Two teams of 3 agents (required), plus 1 extra agent at the end (optional).</p>
+
+  <div class="flow">
+    <div class="step"><b>Raw M5 files</b><small>sales, calendar, prices (downloaded by us, never committed to Git)</small></div>
+    <div class="arrow">&darr;</div>
+
+    <div class="crew"><b>Team 1: Data Analyst Crew <span class="tag must">REQUIRED</span></b>
+      <div class="agents">
+        <div class="agent"><b>1. Data Validator</b><i>checks the data is sane</i></div>
+        <div class="agent"><b>2. Data Cleaner</b><i>fixes it and saves clean_data.csv</i></div>
+        <div class="agent"><b>3. Business Analyst</b><i>charts, insights, data contract</i></div>
+      </div>
+      <small>Produces: <code>clean_data.csv</code> <code>eda_report.html</code> <code>insights.md</code> <code>dataset_contract.json</code></small>
+    </div>
+    <div class="arrow">&darr;</div>
+    <div class="gate"><b>Gate 1</b> <span class="tag stop">STOPS ON FAILURE</span><br><small>Do the files exist, and does the data match the contract? If not, the run stops with a clear error. Team 2 never starts.</small></div>
+    <div class="arrow">&darr;</div>
+
+    <div class="crew"><b>Team 2: Data Scientist Crew <span class="tag must">REQUIRED</span></b>
+      <div class="agents">
+        <div class="agent"><b>4. Feature Engineer</b><i>builds model inputs</i></div>
+        <div class="agent"><b>5. Model Trainer</b><i>trains two models</i></div>
+        <div class="agent"><b>6. Model Evaluator</b><i>compares them, writes the model card</i></div>
+      </div>
+      <small>Produces: <code>features.csv</code> <code>model.joblib</code> <code>evaluation_report.md</code> <code>model_card.md</code></small>
+    </div>
+    <div class="arrow">&darr;</div>
+    <div class="gate"><b>Gate 2</b> <span class="tag stop">STOPS ON FAILURE</span><br><small>All needed features present? Forecast covers 28 days? Scores measured on held-out data? If not, stop.</small></div>
+    <div class="arrow">&darr;</div>
+
+    <div class="a7"><b>7. Business Recommendation Agent (Agent 7) <span class="tag opt">OPTIONAL</span></b>
+      <small>Works alone, after the forecast is confirmed good. Looks up company policy documents (RAG) and writes one careful recommendation with sources, or says "no supporting policy found". If it fails, the forecast is still kept.</small>
+    </div>
+    <div class="arrow">&darr;</div>
+    <div class="step"><b>Results saved + shown in the Streamlit app</b><small>local files always; Supabase database too, if we get to it</small></div>
+  </div>
+
+  <p>The whole chain is run by a <b>CrewAI Flow</b>: it hands results from one step to the next, logs everything, and stops safely if a check fails.</p>
+</section>
+
+<section id="data">
+  <h2><span class="n">3</span>Data and forecasting</h2>
+  <p class="lead">How we predict the next 28 days without cheating.</p>
+  <h3>Preparing the data</h3>
+  <ul>
+    <li>M5 stores sales in a very wide table (one column per day). We turn it into a normal long table: one row per day, store and product.</li>
+    <li>We add the calendar (events, holidays, SNAP days) and weekly prices.</li>
+    <li>We write a <b>dataset contract</b>: a file that says what columns and values are allowed. Team 2 must follow it.</li>
+  </ul>
+  <h3>Predicting</h3>
+  <ul>
+    <li><b>Baseline:</b> "Seasonal Naive", just repeat what happened one week earlier. Any real model must beat it.</li>
+    <li><b>Two models:</b> Ridge Regression and Random Forest (proposed; both from scikit-learn).</li>
+    <li><b>Scores:</b> MAE and RMSE, on the <b>last 28 days of history</b>, which the models never see while learning.</li>
+    <li><b>No random shuffling.</b> Time always goes forward: train, then validate, then test.</li>
+  </ul>
+  <h3>The "no cheating" problem</h3>
+  <p>When predicting day 20 ahead, we do not yet know the sales of day 19. So we only use information that really exists at forecast time: calendar facts, and sales from at least 28 days earlier. Prices are left out of the model because future prices are unknown. These rules are checked by automatic tests.</p>
+  <div class="callout warn"><b>Honest limits:</b> M5 has no promotion or discount field, so we never claim "this discount caused more sales". Some products sell rarely, which makes them hard to predict. There is no stock or cost data.</div>
+</section>
+
+<section id="extras">
+  <h2><span class="n">4</span>Optional parts (only if time allows)</h2>
+  <p class="lead">The required project works fully without any of these.</p>
+  <div class="scroll"><table>
+    <tr><th>Part</th><th>What it is</th><th>Key rules</th></tr>
+    <tr><td><b>RAG + Agent 7</b> <span class="tag opt">OPTIONAL</span></td>
+        <td>3&ndash;5 short <b>synthetic</b> policy documents (promotion policy, discount limits, seasonality). Agent 7 searches them and quotes what it finds.</td>
+        <td>Never invent a source or a discount percentage. If there is no evidence, say so. Ignore instructions hidden inside documents. About 4&ndash;6 hours of work.</td></tr>
+    <tr><td><b>Supabase</b> <span class="tag opt">OPTIONAL</span></td>
+        <td>A cloud database that stores run history, predictions and insights, so the app can show old runs.</td>
+        <td>The app must run without it. All storage goes through a <b>Repository</b> layer (<code>LocalRepository</code> first, <code>SupabaseRepository</code> later). Retrying never creates duplicates. Secret keys never go in Git.</td></tr>
+    <tr><td><b>Promotion analysis</b> <span class="tag opt">OPTIONAL</span></td>
+        <td>Describe how price changes and sales move together.</td>
+        <td>Description only. No causal claims.</td></tr>
+  </table></div>
+  <p><b>If we run late, we cut in this order:</b> Supabase, then Agent 7/RAG, then promotion analysis. We never cut the required Flow, files or forecasts.</p>
+</section>
+
+<section id="app">
+  <h2><span class="n">5</span>The app (Streamlit)</h2>
+  <p class="lead">Simple screens, clear information.</p>
+  <ul>
+    <li><b>Home:</b> start a run and see its status.</li>
+    <li><b>Data Quality:</b> what was checked and what was fixed.</li>
+    <li><b>EDA</b> and <b>Business Insights:</b> charts and findings.</li>
+    <li><b>Sales Forecast:</b> pick a product, see history plus the next 28 days.</li>
+    <li><b>Model Evaluation:</b> MAE/RMSE for each model, per product.</li>
+    <li><b>Recommendations</b> <span class="tag opt">OPTIONAL</span>: advice, sources and limits.</li>
+    <li><b>Run History and Logs:</b> past runs and any errors.</li>
+  </ul>
+</section>
+
+<section id="weeks">
+  <h2><span class="n">6</span>The 4-week plan</h2>
+  <p class="lead">Developer A: Team 1 and data screens. Developer B: Team 2, forecasting and the Flow.</p>
+  <div class="weeks">
+    <div class="week"><h3>Week 1: Foundation</h3>
+      <ul><li>Python 3.12 environment</li><li>Download and inspect M5</li><li>Pick store and products</li><li>Draft the contract</li><li>Baseline forecast works</li></ul></div>
+    <div class="week"><h3>Week 2: Both teams</h3>
+      <ul><li>Team 1 agents and artifacts</li><li>Team 2 agents, two models</li><li>Each team runs on its own</li></ul></div>
+    <div class="week"><h3>Week 3: Connect it</h3>
+      <ul><li>Flow, gates, logging</li><li>Streamlit screens</li><li>Integration tests</li><li><b>MVP milestone:</b> full local run</li><li>Then Agent 7/RAG (time-boxed)</li></ul></div>
+    <div class="week"><h3>Week 4: Finish</h3>
+      <ul><li>Bug fixes and tests</li><li>README that others can follow</li><li>10&ndash;12 slides</li><li>Demo video (5 min max)</li><li>Supabase if on track</li></ul></div>
+  </div>
+  <h3>Deliverables (all required)</h3>
+  <ul>
+    <li>The repository: code, the 8 artifact files and documentation.</li>
+    <li>A business presentation of 10&ndash;12 slides.</li>
+    <li>A demo video of at most 5 minutes.</li>
+  </ul>
+  <h3>Priority order</h3>
+  <p>1) Required project parts &rarr; 2) working end-to-end forecast &rarr; 3) Agent 7 and RAG &rarr; 4) Supabase &rarr; 5) extras.</p>
+</section>
+
+<section id="git">
+  <h2><span class="n">7</span>How we work in Git</h2>
+  <p class="lead">Repository: <code>micgotler-cmd/retailai-multi-agent-sales-intelligence</code> (public on GitHub).</p>
+  <div class="branches">
+    <div class="br main"><b>main</b><br><small>stable, the "finished" version. Only changed by a Pull Request from <code>dev</code>.</small></div>
+    <div class="br dev"><b>dev</b><br><small>where work comes together and gets tested.</small></div>
+    <div class="br"><b>feature/&hellip;</b><br><small>one branch per task, made from <code>dev</code>, e.g. <code>feature/analyst-crew</code>.</small></div>
+  </div>
+  <ol>
+    <li>Create a feature branch from <code>dev</code>.</li>
+    <li>Build it and write tests.</li>
+    <li>Update <code>docs/progress.md</code>.</li>
+    <li>Open a Pull Request into <code>dev</code>; the other developer reviews it.</li>
+    <li>Merge. At a stable milestone, open a Pull Request from <code>dev</code> into <code>main</code>.</li>
+  </ol>
+  <h3>Safety checks at every phase change</h3>
+  <p>Before moving to the next phase we run (1) a <b>security review</b> and (2) the <b>end-to-end test</b>. Both must pass first.</p>
+  <h3>Never commit</h3>
+  <p>Passwords or API keys (<code>.env</code>), the Kaggle dataset, trained models, vector databases, or big generated files. GitHub rules already block force-pushes and deleting <code>main</code>/<code>dev</code>, and require a Pull Request.</p>
+</section>
+
+<section id="status">
+  <h2><span class="n">8</span>Where we are now</h2>
+  <p class="lead">Last updated 2026-11-18. Planning and setup are done. No application code yet.</p>
+  <h3>Done</h3>
+  <ul>
+    <li>Full documentation written: specification, architecture, agents, data/ML, RAG, database, plan, tests, decisions, progress tracker.</li>
+    <li>GitHub repository created, with <code>main</code> and <code>dev</code>, and branch rules in place (Pull Request required, no force-push, no deleting).</li>
+    <li>First two Pull Requests merged (branching strategy into <code>main</code>, then synced back to <code>dev</code>).</li>
+    <li>Both developers are set up on GitHub: the second developer is a collaborator and has cloned the repository.</li>
+    <li>Empty project folders ready: <code>src/</code>, <code>app/</code>, <code>tests/</code>, <code>knowledge/</code>, <code>artifacts/</code>, <code>config/</code>.</li>
+  </ul>
+  <h3>Still to decide (details in <code>docs/decisions.md</code>)</h3>
+  <ul>
+    <li>Which AI provider and model we use, and the budget.</li>
+    <li>Which store and how many products (CA_1 and 20&ndash;50 are the suggestion).</li>
+    <li>Kaggle usage terms; the second developer's GitHub account; who is Developer A and B.</li>
+    <li>Format of the data contract; exact train/validation/test dates (after we look at the data).</li>
+  </ul>
+  <h3>Next step</h3>
+  <p>Agree on the open decisions below, require 1 reviewer per Pull Request now that there are two collaborators, then set up the Python environment, then write a small read-only script that inspects the M5 files and confirms our chosen store and products can actually be forecast.</p>
+</section>
+
+<footer>
+  Full details: <code>docs/project-specification.md</code> (requirements), <code>docs/decisions.md</code> (choices and open questions), <code>docs/implementation-plan.md</code> (schedule), <code>docs/progress.md</code> (live tracker).
+</footer>
+
+</div>
+</body>
+</html>

@@ -28,6 +28,7 @@ A Streamlit app shows data quality, EDA, insights, forecasts, model evaluation, 
 | [testing-strategy.md](docs/testing-strategy.md) | Test layers and acceptance criteria |
 | [decisions.md](docs/decisions.md) | Decision log and open items (TBD) |
 | [progress.md](docs/progress.md) | Shared progress tracker |
+| [project-plan-simple.html](docs/project-plan-simple.html) | The whole plan in simple words (open in a browser) |
 | [architecture-plan.md](docs/architecture-plan.md) | The planning document these docs were generated from |
 
 Original inputs kept for reference: [Word specification](docs/RetailAI_Project_Specification.docx), [instructor brief](docs/final_project_brief_1.html). Contributor and Claude Code conventions: [CLAUDE.md](CLAUDE.md).
