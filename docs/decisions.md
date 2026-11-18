@@ -20,7 +20,7 @@ Single place for architectural decisions and every `TBD`. Requirements are in [p
 | D-10 | Store recommendations in a separate `recommendations` table rather than in `business_insights` | Proposed | Stricter schema (status, evidence array); fallback is `business_insights` with a type value | [database-design.md](database-design.md) |
 | D-11 | `LocalRepository` is backed by SQLite (one file per run folder or one project DB) | Proposed | Same queries as Supabase; no extra service. Alternative: JSON files | [database-design.md](database-design.md) |
 | D-12 | UI framework is Streamlit | Proposed | Spec describes Streamlit; brief allows Streamlit or Flask | [architecture.md](architecture.md) |
-| D-13 | Python 3.12 environment managed with `uv` | Proposed | System Python is 3.14, outside CrewAI's supported range | [implementation-plan.md](implementation-plan.md) |
+| D-13 | Python 3.12 environment managed with `uv` (`pyproject.toml`, `uv.lock`) | Approved | System Python is 3.14, outside CrewAI's supported range; set up in the env-setup PR | [implementation-plan.md](implementation-plan.md) |
 | D-14 | RAG backend: CrewAI Knowledge or a local Chroma store | Deferred | Decide after a compatibility check with the pinned CrewAI version (during the RAG timebox) | [rag-and-recommendations.md](rag-and-recommendations.md) |
 | D-15 | Connect Supabase (migrations, `SupabaseRepository`, Streamlit history) | Deferred | Spec: week 3 or later, after the local MVP works | [database-design.md](database-design.md) |
 | D-16 | Build Agent 7 and RAG | Deferred | Start after the MVP gate (end of week 3, end-to-end local run); 4-6 h timebox | [rag-and-recommendations.md](rag-and-recommendations.md) |
@@ -30,6 +30,7 @@ Single place for architectural decisions and every `TBD`. Requirements are in [p
 | D-21 | Repository layout: `src/{agents,crews,flows,data,ml,rag,repositories,utils}`, `app/`, `tests/{unit,integration,e2e}`, `knowledge/`, `artifacts/`, `config/` | Approved | Team instruction; supersedes the earlier proposed layout in the first docs draft | [architecture.md](architecture.md) |
 | D-22 | Progress is tracked in `docs/progress.md`, updated in the relevant PR | Approved | Team instruction | [progress.md](progress.md) |
 | D-23 | Two permanent branches: `main` (production, default branch) and `dev` (integration). Feature branches start from `dev` and merge into `dev` by PR; `dev` merges into `main` by PR at stable milestones; no direct commits to `main` after the initial setup. No automatic deployments and no separate Supabase environments yet | Approved | Team instruction; remote branch protection pending approval | [implementation-plan.md](implementation-plan.md) |
+| D-24 | Accepted risk: `chromadb` (pulled in by `crewai`) has 5 advisories with no fixed version (server code injection with `trust_remote_code`, authorization flaws in Chroma server mode). Mitigation: never run a Chroma server, never enable `trust_remote_code`, use local embedded mode only; re-audit with `pip-audit` at every phase gate | Approved | Dependency audit during env setup | [progress.md](progress.md) |
 | D-20 | Documentation layout: requirements only in `project-specification.md`, decisions only here, other docs cross-reference | Approved | Team instruction | [../README.md](../README.md) |
 
 ## Open items (TBD)
