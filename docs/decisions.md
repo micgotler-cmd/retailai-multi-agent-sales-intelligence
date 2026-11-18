@@ -9,7 +9,7 @@ Single place for architectural decisions and every `TBD`. Requirements are in [p
 | ID | Decision | Status | Rationale / source | Details |
 |---|---|---|---|---|
 | D-01 | Exactly two CrewAI crews with 3 agents each, plus an independent Agent 7 that runs once after the Forecast Validation Gate | Approved | Spec s1, s6, s7; brief M-01 | [architecture.md](architecture.md), [agents-and-tasks.md](agents-and-tasks.md) |
-| D-02 | M5 Forecasting - Accuracy (Walmart) is the planning dataset | Approved | Spec s5; the brief allows any dataset. Rights check open (T-04) | [data-and-ml.md](data-and-ml.md) |
+| D-02 | M5 Forecasting - Accuracy (Walmart) is the planning dataset | Approved | Spec s5; the brief allows any dataset. Terms check pending (T-04) | [data-and-ml.md](data-and-ml.md) |
 | D-03 | Forecast target: daily units, 28-day horizon, per `item_id` x `store_id` | Approved | Spec s8 | [data-and-ml.md](data-and-ml.md) |
 | D-04 | Compare a Seasonal Naive baseline with two Scikit-Learn model variations on MAE and RMSE, chronological split | Approved | Spec s8 (brief minimum is 2 variations) | [data-and-ml.md](data-and-ml.md) |
 | D-05 | The two variations are Ridge Regression and Random Forest Regressor | Proposed | Spec says "such as"; cheap and explainable | [data-and-ml.md](data-and-ml.md) |
@@ -33,27 +33,35 @@ Single place for architectural decisions and every `TBD`. Requirements are in [p
 | D-24 | Accepted risk: `chromadb` (pulled in by `crewai`) has 5 advisories with no fixed version (server code injection with `trust_remote_code`, authorization flaws in Chroma server mode). Mitigation: never run a Chroma server, never enable `trust_remote_code`, use local embedded mode only; re-audit with `pip-audit` at every phase gate | Approved | Dependency audit during env setup | [progress.md](progress.md) |
 | D-20 | Documentation layout: requirements only in `project-specification.md`, decisions only here, other docs cross-reference | Approved | Team instruction | [../README.md](../README.md) |
 
+## Finalized items (formerly open, decided 2026-11-18)
+
+Status values as above, plus **Pending** for the part of a decision that still needs verification or input. Details live in the linked documents.
+
+| ID | Decision | Status | Still pending | Details |
+|---|---|---|---|---|
+| T-11 | Developer responsibilities. **A:** M5 ingestion and preprocessing, validation and cleaning, EDA, dataset contract, Data Analyst Crew, data Streamlit screens. **B:** feature engineering, model training and evaluation, 28-day product-level forecasting, Data Scientist Crew, forecasting Streamlit screens. **Shared:** CrewAI Flow orchestration and integration, Agent 7, RAG, Supabase, end-to-end testing, final presentation and demo. Interfaces between workstreams are defined so A and B can work in parallel | Approved (structure) | Who is A and who is B | [agents-and-tasks.md](agents-and-tasks.md) |
+| T-01 | OpenAI API is the LLM provider for all seven agents at runtime; Claude Code stays the development tool. Provider and model come from environment variables (`OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_FALLBACK_MODEL`); nothing is hard-coded. Proposed default `gpt-4.1-mini`, fallback `gpt-4o-mini`. Cost controls: temperature 0, limited retries, per-run call and token caps, spend limit in the OpenAI dashboard. Deterministic Python does all numeric work | Approved (provider); model and budget Pending | Live availability check of the model (one approved API call), CrewAI-compatible structured output check, monthly budget amount, per-run caps tuned after the first real run | [architecture.md](architecture.md) |
+| T-02 | MVP store is `CA_1`. The store is a configuration value so another store can be chosen later; the MVP implements one store only | Approved | | [data-and-ml.md](data-and-ml.md) |
+| T-03 | Start with 20 items, expandable to 50. Selected from the training period only (never the final 28-day test window), stratified high/medium/low demand, adequate history and price coverage, extremely sparse items excluded. Method and chosen `item_id` values are documented after inspection | Approved (approach) | Exact thresholds and the selected `item_id` values (after the dataset inspection; depends on T-09) | [data-and-ml.md](data-and-ml.md) |
+| T-04 | Verify the Kaggle M5 Forecasting - Accuracy rules and data terms before downloading, using or redistributing the data. Confirm educational use; document source and download steps; never commit raw M5 data; do not assume redistribution is allowed | Pending verification | Reading the competition rules and data terms on Kaggle (needs a Kaggle login), recording who checked, when, and the outcome | [data-and-ml.md](data-and-ml.md) |
+| T-12 | Versioned JSON dataset contract, `dataset_contract.json`, with deterministic hand-written Python validation (no schema-management framework) | Approved | Exact field list is finalized when the first clean data exists | [data-and-ml.md](data-and-ml.md) |
+
 ## Open items (TBD)
 
 | ID | Open item | Needed by | Notes |
 |---|---|---|---|
-| T-01 | LLM provider/model and embedding model, API budget | Week 1 (crews), Agent 7 | Keys only in `.env` (M-21) |
-| T-02 | MVP store | Week 1 | `CA_1` suggested, not confirmed |
-| T-03 | Number of items (20-50) and selection rule (history coverage, zero rate, department mix) | Week 1 | After data inspection |
-| T-04 | M5 usage rights / Kaggle terms for coursework | Week 1 | Download needs a Kaggle login (manual) |
 | T-05 | Supabase project (exists? who owns it?) and how each developer holds keys | Week 3 | Only if D-15 goes ahead |
 | T-06 | Second developer's GitHub username | Before repo setup | For collaborator invite |
 | T-07 | Commit the eight final artifacts to Git at submission, or keep them local | Week 4 | Datasets and `.env` are never committed |
 | T-08 | Instructor confirmation that extensions (Agent 7, RAG, Supabase) are acceptable | Before week 3 | Spec s17 |
 | T-09 | Exact train/validation/test boundaries | After data inspection | Provisional: test = the last 28 days of history |
 | T-10 | Review of the supplementary PDF named in spec s19 | Week 1 | Not available in this repository |
-| T-11 | Which developer is A and which is B | Week 1 | Roles in spec s15 |
-| T-12 | Dataset contract format (JSON Schema vs custom JSON) | Week 1 | Must hold schema, allowed values, assumptions, constraints |
 | T-13 | Missing-price null policy | Week 1 | Examine, do not silently impute (spec s5) |
 | T-14 | How Agent 7 picks the item(s) for its single recommendation | Before D-16 | Spec: "one qualified recommendation" |
 | T-15 | Deployment target, if any | Week 4 | Linked to D-17 |
 | T-16 | Refit the final model on train plus validation before the test forecast | Week 2 | Must be documented either way |
 | T-17 | Supabase failure fallback policy (queue unsent records for retry or not) | Week 3 | Only if D-15 goes ahead |
 | T-18 | Exact UNIQUE key for `business_insights` (insight granularity) | Week 3 | Needed for idempotent retries |
+| T-21 | Embedding model for RAG (OpenAI embeddings suggested, name to verify with the pinned CrewAI version); only needed if Agent 7 goes ahead | Before D-16 | Split out of T-01 |
 | T-20 | Location of CrewAI tool wrappers and Supabase SQL migrations (not in the approved layout) | Week 1 / Week 3 | |
 | T-19 | Project start date (the plan chart uses placeholder dates) | Week 1 | |

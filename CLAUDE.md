@@ -4,7 +4,7 @@ Guidance for Claude Code in this repository. Keep this file short; details live 
 
 ## Project
 
-RetailAI: multi-agent sales intelligence on the Kaggle M5 dataset (Python, CrewAI, Streamlit). Two developers, four weeks. Two CrewAI crews of exactly three agents each, coordinated by a CrewAI Flow, plus an independent seventh Business Recommendation Agent that runs once after a validated forecast. Forecast: 28 days, per `item_id` x `store_id`. RAG (Agent 7) and Supabase are optional, time-boxed enhancements.
+RetailAI: multi-agent sales intelligence on the Kaggle M5 dataset (Python, CrewAI, Streamlit). Two developers, four weeks. At runtime all seven agents use the OpenAI API (Claude Code is the development tool only). Two CrewAI crews of exactly three agents each, coordinated by a CrewAI Flow, plus an independent seventh Business Recommendation Agent that runs once after a validated forecast. Forecast: 28 days, per `item_id` x `store_id`. RAG (Agent 7) and Supabase are optional, time-boxed enhancements.
 
 ## Source of truth
 
@@ -26,13 +26,17 @@ Do not duplicate requirements in other files; link to them.
 - Never fabricate citations, metrics or policies. Demo policies are labeled synthetic.
 - Never commit `.env`, credentials, datasets, local vector indexes or large generated artifacts. Never print secrets or put them in logs. Do not execute LLM-generated code without review.
 - **Phase gate:** at every transition from one development phase to the next, run (1) a security review (for example the `security-review` skill) and (2) the end-to-end test for everything built so far (see [docs/testing-strategy.md](docs/testing-strategy.md)). Do not start the next phase until both have passed; fix findings first and re-run.
+- OpenAI settings come only from environment variables (`OPENAI_API_KEY`, `OPENAI_MODEL`, ...); never hard-code a key, model name or limit, and never print or commit a key. Model choice and cost controls: [docs/architecture.md](docs/architecture.md). Do not make OpenAI API calls without the developers' approval; tests mock the LLM.
+- Do not download or use M5 data until the Kaggle terms check (T-04) is recorded. Select items from the training period only (T-03).
+- `dataset_contract.json` is versioned JSON validated by plain Python; do not add schema frameworks (T-12).
+- Respect the workstream split and interfaces in [docs/agents-and-tasks.md](docs/agents-and-tasks.md); change an interface only through a PR that updates that document.
 - Get approval before major architectural changes (anything listed in [docs/decisions.md](docs/decisions.md)); record the outcome there.
 - Ask before installing packages, creating remote resources, or running destructive commands.
 - Use the `store_id` / `item_id` naming everywhere (not `store_nbr` / `family`).
 
 ## Coding conventions
 
-- Python (3.12 proposed, D-13 in decisions), type hints, small functions, docstrings for public functions.
+- Python 3.12 with uv (D-13), type hints, small functions, docstrings for public functions.
 - Crew and agent files contain definitions only; logic lives in `src/data`, `src/ml`, `src/rag`, `src/repositories` and is exposed to agents through thin typed tools (layout: [docs/architecture.md](docs/architecture.md)).
 - Config via environment variables and one config module; fixed random seeds; log every Flow state transition and gate result.
 - Format and lint with ruff (planned); keep dependencies pinned.
