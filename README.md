@@ -57,9 +57,17 @@ uv run pytest              # runs the tests (none exist yet)
 ```
 
 - Run commands inside the environment with `uv run <command>` (or activate `.venv`).
-- Datasets are downloaded separately from Kaggle and are never committed.
+- Data: see [Data source](#data-source) below. Datasets are never committed.
 - The OpenAI API key goes in a local `.env` (copy `.env.example`; needed once the code calls an LLM). `.env` is never committed.
 - Run commands for the pipeline and the app will be added when that code exists.
+
+## Data source
+
+Kaggle [M5 Forecasting - Accuracy](https://www.kaggle.com/competitions/m5-forecasting-accuracy) (Walmart sales data). The data is subject to the competition rules, which allow non-commercial use for academic research and education and forbid redistribution to anyone who has not accepted them (decision T-04 in [docs/decisions.md](docs/decisions.md)). This repository therefore contains no M5 data. To run the project:
+
+1. Sign in to Kaggle, open the competition, read the Rules and accept them with your own account.
+2. Download the files from the Data tab and unzip them into `data/raw/` at the repository root (Git ignores this folder).
+3. Do not share the files with anyone; each person downloads their own copy.
 
 ## Limitations (planned)
 
