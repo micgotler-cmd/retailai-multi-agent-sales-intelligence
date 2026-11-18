@@ -96,7 +96,7 @@
   RetailAI takes real sales data, cleans it, explains it, and predicts how many units of each product will sell in the <b>next 28 days</b>.</p>
   <ul>
     <li><b>Data:</b> the public Kaggle <b>M5</b> dataset (Walmart sales). We start small: <b>one store</b> and <b>20&ndash;50 products</b>.</li>
-    <li><b>Tools:</b> Python, CrewAI (AI agents), scikit-learn (machine learning), Streamlit (the app).</li>
+    <li><b>Tools:</b> Python, CrewAI (AI agents powered by the OpenAI API), scikit-learn (machine learning), Streamlit (the app). Claude Code only helps us write the project.</li>
     <li><b>Team:</b> two developers, working with Claude Code, one small reviewed step at a time.</li>
   </ul>
   <div class="callout"><b>Golden rule:</b> normal Python code does all the math. The AI agents decide what to run, read the results, and explain them in words. They never invent numbers.</div>
@@ -253,15 +253,20 @@
     <li>Both developers are set up on GitHub: the second developer is a collaborator and has cloned the repository.</li>
     <li>Empty project folders ready: <code>src/</code>, <code>app/</code>, <code>tests/</code>, <code>knowledge/</code>, <code>artifacts/</code>, <code>config/</code>.</li>
   </ul>
-  <h3>Still to decide (details in <code>docs/decisions.md</code>)</h3>
+  <h3>Decided (2026-11-18)</h3>
   <ul>
-    <li>Which AI provider and model we use, and the budget.</li>
-    <li>Which store and how many products (CA_1 and 20&ndash;50 are the suggestion).</li>
-    <li>Kaggle usage terms; the second developer's GitHub account; who is Developer A and B.</li>
-    <li>Format of the data contract; exact train/validation/test dates (after we look at the data).</li>
+    <li><b>Who does what:</b> Developer A takes data, cleaning, EDA, the data contract, Team 1 and the data screens. Developer B takes features, models, forecasting, Team 2 and the forecast screens. Together we do the Flow, Agent 7, RAG, Supabase, end-to-end tests and the presentation. Which person is A or B is still to be confirmed.</li>
+    <li><b>AI provider:</b> OpenAI for all seven agents, set through environment variables. Proposed model: <code>gpt-4.1-mini</code> (backup <code>gpt-4o-mini</code>); the exact model and budget are still to be verified. We cap retries, calls and tokens to control cost.</li>
+    <li><b>Store:</b> <code>CA_1</code>. <b>Products:</b> start with 20 (up to 50), chosen from the training period only, mixing high, medium and low sellers.</li>
+    <li><b>Data contract:</b> a versioned JSON file, checked by plain Python code.</li>
+  </ul>
+  <h3>Still to do before downloading data</h3>
+  <ul>
+    <li>Read and record Kaggle's M5 rules and terms (we must confirm coursework use is allowed). Until then, nobody downloads the data.</li>
+    <li>Pick the exact 20 products and the train/validation/test dates (after we look at the data).</li>
   </ul>
   <h3>Next step</h3>
-  <p>Merge the environment setup, agree on the open decisions above, then write a small read-only script that inspects the M5 files and confirms our chosen store and products can actually be forecast.</p>
+  <p>Check the Kaggle terms, confirm who is A and B, then write a small read-only script that inspects the M5 files and confirms our chosen store and products can actually be forecast.</p>
 </section>
 
 <footer>

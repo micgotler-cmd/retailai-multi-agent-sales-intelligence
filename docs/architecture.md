@@ -147,8 +147,37 @@ Local-only, git-ignored: `.env`, `.venv/`, a root `data/` folder for downloaded 
 
 The spec lists five core screens; EDA, Model Evaluation and Recommendations are split out here for clarity (Proposed). Pages only read results; only Home starts a run. Streamlit is Proposed (D-12).
 
+## LLM provider and cost controls (T-01)
+
+Claude Code is used only to develop the project. At runtime all seven agents call the **OpenAI API**. The provider, models and limits are read from environment variables (see `.env.example`); no key, model name or limit is hard-coded.
+
+| Setting | Value | Status |
+|---|---|---|
+| Default model (`OPENAI_MODEL`) | `gpt-4.1-mini`: low cost, reliable tool calling and structured outputs, no hidden reasoning tokens, so cost and latency are predictable | Proposed |
+| Fallback (`OPENAI_FALLBACK_MODEL`) | `gpt-4o-mini`: use if the default has compatibility or quality problems | Proposed |
+| Escalation | `gpt-4.1` only for a specific agent whose output quality is not acceptable | Proposed |
+| Not chosen by default | GPT-5 family (`gpt-5-mini`, `gpt-5-nano`): reasoning models, more tokens and variable cost | Proposed |
+
+**Verification status:** all four names appear in the OpenAI model list built into the installed CrewAI (1.15.41). That shows CrewAI knows the names; it does not prove the account can use them, that they support the structured outputs we need, or what they cost today. Those checks need one approved API call and a look at OpenAI's pricing page. Until then the model is Pending.
+
+**Cost controls**
+
+| Control | Rule |
+|---|---|
+| Deterministic first | ETL, features, training, metrics, citation checks and validation are plain Python; agents only choose tools and write explanations |
+| Temperature | 0 for all agents (`LLM_TEMPERATURE`) |
+| Retries | At most 2 retries with backoff (`LLM_MAX_RETRIES`); a failed call is logged, never looped |
+| Agent limits | Small maximum iterations per agent; a request timeout (`LLM_TIMEOUT_SECONDS`) and an output token limit (`LLM_MAX_OUTPUT_TOKENS`) |
+| Per-run caps | A call cap and a token cap per Flow run (`LLM_MAX_CALLS_PER_RUN`, `LLM_MAX_TOKENS_PER_RUN`); hitting a cap stops the LLM stage with a clear error (before Gate 2 the run fails; after it, the run completes with warnings). Starting values are guesses and are tuned after the first real run |
+| Token monitoring | Token usage per agent and per run is logged and stored in the run manifest |
+| Spend limit | A monthly budget limit and alert on the OpenAI project; each developer uses their own API key. Amount: pending (T-01) |
+| Tests | Automated tests mock the LLM, so they cost nothing and are repeatable; real-LLM runs happen only at phase gates and for the demo |
+| Secrets | Keys live only in a local `.env`; they are never printed, logged or committed |
+
+**Two separate costs:** the Claude Code subscription pays for development help (writing code and docs). The OpenAI API is pay-per-token and is billed to the OpenAI account; only running the pipeline's agents (and optional embeddings for RAG, T-21) uses it. They are billed independently.
+
 ## Configuration, logging, reproducibility
 
-- Configuration comes from environment variables and a small config module; `.env` is never committed, `.env.example` lists the keys (M-21). Backend choice: `REPOSITORY_BACKEND=local|supabase` (default `local`).
+- Configuration comes from environment variables and a small config module (`src/utils/`, `config/` for non-secret settings; the store id is a setting, T-02); `.env` is never committed, `.env.example` lists the keys (M-21). Backend choice: `REPOSITORY_BACKEND=local|supabase` (default `local`).
 - One `run_id` per Flow run, reused on retry; each run writes to its own artifact folder with a log file and a run manifest (seeds, library versions, split boundaries, dataset version) (M-09, M-20).
 - Logging redacts secrets; every state transition and gate result is logged.

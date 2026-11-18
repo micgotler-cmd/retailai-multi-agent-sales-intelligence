@@ -58,7 +58,7 @@ uv run pytest              # runs the tests (none exist yet)
 
 - Run commands inside the environment with `uv run <command>` (or activate `.venv`).
 - Datasets are downloaded separately from Kaggle and are never committed.
-- API keys go in a local `.env` (copy `.env.example`; needed once the code calls an LLM). `.env` is never committed.
+- The OpenAI API key goes in a local `.env` (copy `.env.example`; needed once the code calls an LLM). `.env` is never committed.
 - Run commands for the pipeline and the app will be added when that code exists.
 
 ## Limitations (planned)
