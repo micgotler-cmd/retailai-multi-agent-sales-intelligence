@@ -10,7 +10,7 @@ Dataset handling and forecasting approach. Requirements: M-16 to M-18, M-20, M-2
 | `calendar.csv` | Date for each `d`, `wm_yr_wk`, events, SNAP flags | Date mapping, known future features |
 | `sell_prices.csv` | Weekly price per `store_id`, `item_id`, `wm_yr_wk` | Price analysis (EDA) |
 
-Data is downloaded manually from Kaggle, and only **after the usage terms have been checked (T-04, status: Pending verification)**. Raw and processed data are git-ignored and never committed; the repository holds only download instructions. Redistribution is not assumed to be allowed, so test fixtures are synthetic (M5-shaped), never real M5 rows.
+Data is downloaded manually from Kaggle, and only **after each developer has accepted the competition rules on their own Kaggle account (T-04, Approved with conditions)**. Raw and processed data are git-ignored and never committed; the repository holds only download instructions. Redistribution is not assumed to be allowed, so test fixtures are synthetic (M5-shaped), never real M5 rows.
 
 **Terms check and download steps (T-04)**
 1. Log in to Kaggle, open the *M5 Forecasting - Accuracy* competition, and read its **Rules** and **Data** pages (including the data license and any "accept rules" step).
@@ -19,7 +19,9 @@ Data is downloaded manually from Kaggle, and only **after the usage terms have b
 4. Download the three files through the Kaggle website (or the Kaggle CLI with a personal token kept outside the repo; installing the CLI needs approval) and place them in a root `data/raw/` folder, which Git ignores.
 5. Record the dataset version/date in `dataset_contract.json` and the run manifest.
 
-Terms check result: *not yet recorded.* The dataset has no promotion, coupon or discount-percentage field; price changes are not treated as promotions.
+**Terms check result (T-04):** checked 2026-11-18 by Lilach Afik on the competition Rules page, section 7 "Competition Data" (the Data tab license says "Subject to Competition Rules"). Rule 7A allows non-commercial use for academic research and education. Rule 7B forbids passing the data to anyone who has not accepted the rules. Conclusion: **allowed, with conditions**: (1) each developer accepts the rules on their own Kaggle account and downloads their own copy; (2) no M5 data in the public repository: no raw files and no row-level copies such as `clean_data.csv`; (3) anyone else who runs the project (for example graders) downloads the data from Kaggle themselves; (4) slides, demo and dashboard show aggregates, charts, metrics and forecasts only, with no raw data tables or data downloads; a public deployment (D-17) needs a fresh check; (5) if Supabase ever holds M5-derived rows, the project stays private to the two developers; (6) LLM agents receive summaries, statistics and metrics, not bulk raw rows. The download contains `calendar.csv`, `sales_train_validation.csv` (d_1 to d_1913), `sales_train_evaluation.csv` (d_1 to d_1941), `sell_prices.csv` and `sample_submission.csv`, about 450 MB in total; which sales file we use is decided during the inspection (T-09).
+
+The dataset has no promotion, coupon or discount-percentage field; price changes are not treated as promotions.
 
 Fields not guaranteed to exist must not be assumed: the first pipeline step is a read-only inspection of the real files (shape, date range, missing dates, price coverage, zero rate per item).
 

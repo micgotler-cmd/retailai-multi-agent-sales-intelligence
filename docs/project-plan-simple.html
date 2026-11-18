@@ -249,7 +249,7 @@
     <li>Full documentation written: specification, architecture, agents, data/ML, RAG, database, plan, tests, decisions, progress tracker.</li>
     <li>GitHub repository created, with <code>main</code> and <code>dev</code>, and branch rules in place (Pull Request required, no force-push, no deleting).</li>
     <li>First two Pull Requests merged (branching strategy into <code>main</code>, then synced back to <code>dev</code>).</li>
-    <li>Python environment set up with Python 3.12 and <code>uv</code> (in review). A dependency check found known issues only in a ChromaDB package that CrewAI brings in; we avoid the affected features.</li>
+    <li>Python environment set up with Python 3.12 and <code>uv</code> (merged). A dependency check found known issues only in a ChromaDB package that CrewAI brings in; we avoid the affected features.</li>
     <li>Both developers are set up on GitHub: the second developer is a collaborator and has cloned the repository.</li>
     <li>Empty project folders ready: <code>src/</code>, <code>app/</code>, <code>tests/</code>, <code>knowledge/</code>, <code>artifacts/</code>, <code>config/</code>.</li>
   </ul>
@@ -259,14 +259,15 @@
     <li><b>AI provider:</b> OpenAI for all seven agents, set through environment variables. Proposed model: <code>gpt-4.1-mini</code> (backup <code>gpt-4o-mini</code>); the exact model and budget are still to be verified. We cap retries, calls and tokens to control cost.</li>
     <li><b>Store:</b> <code>CA_1</code>. <b>Products:</b> start with 20 (up to 50), chosen from the training period only, mixing high, medium and low sellers.</li>
     <li><b>Data contract:</b> a versioned JSON file, checked by plain Python code.</li>
+    <li><b>Kaggle terms:</b> checked. Using M5 for coursework is allowed. We may not pass the data to anyone else, so each of us accepts the Kaggle rules and downloads our own copy, the data never goes on GitHub, and we only show charts, summaries and forecasts in public.</li>
   </ul>
   <h3>Still to do before downloading data</h3>
   <ul>
-    <li>Read and record Kaggle's M5 rules and terms (we must confirm coursework use is allowed). Until then, nobody downloads the data.</li>
+    <li>Each developer accepts the Kaggle rules with their own account and downloads the data into <code>data/raw/</code>.</li>
     <li>Pick the exact 20 products and the train/validation/test dates (after we look at the data).</li>
   </ul>
   <h3>Next step</h3>
-  <p>Check the Kaggle terms, confirm who is A and B, then write a small read-only script that inspects the M5 files and confirms our chosen store and products can actually be forecast.</p>
+  <p>Download the data, confirm who is A and B, then write a small read-only script that inspects the M5 files and confirms our chosen store and products can actually be forecast.</p>
 </section>
 
 <footer>
