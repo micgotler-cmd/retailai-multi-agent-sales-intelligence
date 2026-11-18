@@ -45,7 +45,21 @@ Flow: branch from `dev`, implement and test, update [docs/progress.md](docs/prog
 
 ## Setup and run
 
-TBD (see decisions.md). Setup, environment and run commands will be added when the first code is merged (Python version and tooling are tracked in [decisions.md](docs/decisions.md)). Datasets are downloaded separately from Kaggle and are never committed. API keys go in a local `.env` file that is never committed.
+Requires [uv](https://docs.astral.sh/uv/) (`brew install uv`). Python 3.12 is used (pinned in `.python-version`); your system Python is not touched.
+
+```
+git clone https://github.com/micgotler-cmd/retailai-multi-agent-sales-intelligence.git
+cd retailai-multi-agent-sales-intelligence
+git checkout dev
+uv python install 3.12     # once
+uv sync                    # creates .venv and installs the locked versions from uv.lock
+uv run pytest              # runs the tests (none exist yet)
+```
+
+- Run commands inside the environment with `uv run <command>` (or activate `.venv`).
+- Datasets are downloaded separately from Kaggle and are never committed.
+- API keys go in a local `.env` (copy `.env.example`; needed once the code calls an LLM). `.env` is never committed.
+- Run commands for the pipeline and the app will be added when that code exists.
 
 ## Limitations (planned)
 

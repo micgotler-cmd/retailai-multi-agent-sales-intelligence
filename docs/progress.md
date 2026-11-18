@@ -18,7 +18,7 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 
 | ID | Component | Task | Owner | Status | Branch / PR | Tests | Notes |
 |---|---|---|---|---|---|---|---|
-| P-01 | Setup | Repository and environment setup | TBD | In Progress | `main` (`82aeec9`), `dev` (local, not pushed) | Not Applicable | Repo is live and public; initial docs pushed to `main`. Remaining: push `dev`, branch protection (D-23), Python environment (D-13), collaborator (T-06) |
+| P-01 | Setup | Repository and environment setup | TBD | In Review | `feature/env-setup` (PR into `dev`) | Not Applicable | Repo, branches and ruleset done. Python 3.12 environment, `pyproject.toml`, `uv.lock` in the PR; dependency audit run (D-24). Partner must run `uv sync` after merge; `.env` is created later (needs T-01) |
 | P-02 | Data | M5 dataset ingestion | TBD | Not Started | | Not Run | Needs Kaggle download and usage-rights check (T-04); store and items TBD (T-02, T-03) |
 | P-03 | Data | Data validation and cleaning | TBD | Not Started | | Not Run | Null-price policy TBD (T-13) |
 | P-04 | Crews | Data Analyst Crew | TBD | Not Started | | Not Run | M-01 to M-03 |
@@ -40,12 +40,12 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 
 | Branch | Base | Purpose | Status | PR |
 |---|---|---|---|---|
-| `main` | n/a | Production, default branch (D-23) | Exists on GitHub, initial commit `82aeec9` | n/a |
-| `dev` | `main` | Integration branch (D-23) | Created locally; not pushed until approved | PR `dev` into `main` will carry the branching-strategy docs |
+| `main` | n/a | Production, default branch (D-23) | Protected by ruleset (PR required) | #1, #4 merged from `dev` |
+| `dev` | `main` | Integration branch (D-23) | Protected by ruleset (PR required) | #2 merged from `main` |
+| `docs/add-simple-plan` | `dev` | Simple-language plan overview (`project-plan-simple.html`) | Merged | #3 |
+| `feature/env-setup` | `dev` | Python 3.12 environment with uv (D-13) | In review | PR into `dev` |
 
 Add one row per feature branch and its PR (target `dev`) as work starts.
-
-| `docs/add-simple-plan` | `dev` | Add the simple-language plan overview (`project-plan-simple.html`) | In review | PR into `dev`, then `dev` into `main` |
 
 ## Completed Work
 
@@ -53,20 +53,22 @@ Add one row per feature branch and its PR (target `dev`) as work starts.
 |---|---|---|
 | 2026-11-17 | Documentation set created (README, CLAUDE.md, 10 documents under `docs/`) and internal links checked | Initial commit `82aeec9` on `main` (no PR) |
 | 2026-11-17 | Public GitHub repository created and `main` pushed | n/a |
+| 2026-11-17 | `dev` branch created, ruleset for `main` and `dev` enabled, branching strategy documented (D-23) | #1, #2 |
+| 2026-11-18 | Second developer is a collaborator and has cloned the repository | n/a |
+| 2026-11-18 | Simple-language plan overview added to `dev` and `main` | #3, #4 |
 
 ## Current Blockers
 
 | Blocker | Affects | Needed from |
 |---|---|---|
-| `dev` branch and branch protection not yet on GitHub | P-01 | Owner approval of the remote setup |
-| Open items T-01 to T-19 | Several tasks | Developers, see [decisions.md](decisions.md) |
+| Open items T-01 to T-20 | Several tasks | Developers, see [decisions.md](decisions.md) |
 
 ## Next Actions
 
-1. Approve the remote branch setup: push `dev`, enable branch protection (D-23), then merge the branching docs into `main` by PR.
-2. Invite the second developer (T-06) so PR reviews are possible.
-3. Resolve the Week 1 open items: T-01, T-02, T-03, T-04, T-11, T-12.
-4. Set up the Python environment (D-13), then run the read-only M5 dataset inspection (first implementation task, see [implementation-plan.md](implementation-plan.md)).
+1. Review and merge the env-setup PR; the other developer runs `uv sync`.
+2. Resolve the Week 1 open items: T-01, T-02, T-03, T-04, T-11, T-12.
+3. Each developer downloads M5 from Kaggle (never committed), then run the read-only dataset inspection (first implementation task, see [implementation-plan.md](implementation-plan.md)).
+4. Each developer creates a local `.env` once T-01 is decided.
 
 ## Decision Log References
 

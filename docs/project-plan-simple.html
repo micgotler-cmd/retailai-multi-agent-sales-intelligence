@@ -249,6 +249,7 @@
     <li>Full documentation written: specification, architecture, agents, data/ML, RAG, database, plan, tests, decisions, progress tracker.</li>
     <li>GitHub repository created, with <code>main</code> and <code>dev</code>, and branch rules in place (Pull Request required, no force-push, no deleting).</li>
     <li>First two Pull Requests merged (branching strategy into <code>main</code>, then synced back to <code>dev</code>).</li>
+    <li>Python environment set up with Python 3.12 and <code>uv</code> (in review). A dependency check found known issues only in a ChromaDB package that CrewAI brings in; we avoid the affected features.</li>
     <li>Both developers are set up on GitHub: the second developer is a collaborator and has cloned the repository.</li>
     <li>Empty project folders ready: <code>src/</code>, <code>app/</code>, <code>tests/</code>, <code>knowledge/</code>, <code>artifacts/</code>, <code>config/</code>.</li>
   </ul>
@@ -260,7 +261,7 @@
     <li>Format of the data contract; exact train/validation/test dates (after we look at the data).</li>
   </ul>
   <h3>Next step</h3>
-  <p>Agree on the open decisions below, require 1 reviewer per Pull Request now that there are two collaborators, then set up the Python environment, then write a small read-only script that inspects the M5 files and confirms our chosen store and products can actually be forecast.</p>
+  <p>Merge the environment setup, agree on the open decisions above, then write a small read-only script that inspects the M5 files and confirms our chosen store and products can actually be forecast.</p>
 </section>
 
 <footer>
