@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Four weeks, two developers. Schedule source: section 16 of [project-specification.md](project-specification.md). Ownership follows T-11 (see [agents-and-tasks.md](agents-and-tasks.md)): Developer A does data and Crew 1, Developer B does ML and Crew 2, and the Flow, Agent 7, RAG, Supabase, end-to-end testing and the presentation are shared. Who is A and who is B is still pending (T-11). Open choices: [decisions.md](decisions.md).
+Four weeks, two developers. Schedule source: section 16 of [project-specification.md](project-specification.md). Ownership follows T-11 (see [agents-and-tasks.md](agents-and-tasks.md)): Developer A does data and Crew 1, Developer B does ML and Crew 2, and the Flow, Agent 7, RAG, Supabase, end-to-end testing and the presentation are shared. Developer A is Lilach, Developer B is Michal (T-11, confirmed 2026-11-18). Open choices: [decisions.md](decisions.md).
 
 **Priority order:** 1. mandatory academic requirements, 2. working end-to-end forecasting, 3. Agent 7 and RAG, 4. Supabase, 5. optional improvements. **MVP milestone:** end of week 3, a local end-to-end run (both crews, both gates, Streamlit) with no RAG and no Supabase.
 
@@ -27,7 +27,7 @@ Dates in the chart are placeholders only; actual start date is TBD (T-19).
 | Objective | Repository and environment ready; data inspected; baseline works |
 | Dev A | Check the Kaggle M5 terms and record the result (T-04), then download; inspect files, ETL wide-to-long, select the 20 `CA_1` items by the T-03 method, draft the JSON contract (T-12), start Crew 1 tools, create the synthetic test fixture |
 | Dev B | Feature and baseline PoC (Seasonal Naive plus Ridge) on the fixture first, then on real data once T-04 is done; `Repository` interface and `LocalRepository` |
-| Both | Confirm who is A and B (T-11); settings module for OpenAI configuration with no calls yet; set the OpenAI spend limit; verify the model with one approved call (T-01); freeze the interfaces in [agents-and-tasks.md](agents-and-tasks.md); settle T-09 |
+| Both | Settings module for OpenAI configuration with no calls yet; set the OpenAI spend limit; verify the model with one approved call (T-01); freeze the interfaces in [agents-and-tasks.md](agents-and-tasks.md); settle T-09 |
 | Deliverables | Clean long-format data, draft contract, working baseline, repo with CI skeleton |
 | Exit | Clean data and a working baseline |
 | Effort | About 12-15 h per developer |
