@@ -7,10 +7,10 @@ Shared development tracker for RetailAI. Requirements: [project-specification.md
 | Field | Value |
 |---|---|
 | Project name | RetailAI: Multi-Agent Sales Intelligence |
-| Current phase | Phase 0: repository and documentation setup (no application code yet) |
-| Overall status | On track; documentation, repository and environment done; data terms checked (T-04) |
-| Last updated | 2026-11-18 |
-| Next milestone | Week 1 exit: clean data and a working baseline ([implementation-plan.md](implementation-plan.md)) |
+| Current phase | Phase 1 (data foundation) complete; phase gate passed 2026-11-23. Next phase: crews and models |
+| Overall status | On track; data pipeline (validation, ETL, cleaning, contract) merged and tested on the real data |
+| Last updated | 2026-11-23 |
+| Next milestone | Week 1 exit: clean data (done) and a working baseline (Dev B, P-07/P-08) ([implementation-plan.md](implementation-plan.md)) |
 
 ## Development Progress
 
@@ -23,7 +23,7 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | P-03 | Data | Data validation and cleaning | Dev A | Completed | #9, #11 | Passed (unit) | Validation (Agent 1 logic) and cleaning (Agent 2 logic, T-13) merged. Real data: validation pass; 31,278 clean rows, 0 missing prices |
 | P-04 | Crews | Data Analyst Crew | Dev A | Not Started | | Not Run | M-01 to M-03. Plan: move the reusable checks from `src/data/inspect_m5.py` (files, columns, calendar gaps, duplicates, negative values) into `src/data/validation.py` as the Data Validator tools, so the logic exists once; put the 20 approved item IDs and the T-09 split days in a config file under `config/` for the Data Cleaner and the contract; keep `inspect_m5` as a dev script (rerun to expand to 50 items) that imports the shared checks. The crew never re-selects items at runtime |
 | P-05 | Data | EDA and business insights | Dev A | Not Started | | Not Run | M-02 |
-| P-06 | Data | Dataset Contract | Dev A | In Review | `feature/dataset-contract` | Passed (unit) | `src/data/contract.py` writes `dataset_contract.json` (T-12, M-24) and runs the Gate 1 check (9 rules). Real clean data: all rules pass |
+| P-06 | Data | Dataset Contract | Dev A | Completed | #12 | Passed (unit, e2e) | `src/data/contract.py` writes `dataset_contract.json` (T-12, M-24) and runs the Gate 1 check (9 rules). Real clean data: all rules pass |
 | P-07 | ML | Feature engineering | Dev B | Not Started | | Not Run | Strategy proposed in D-06 |
 | P-08 | ML | Model training and evaluation | Dev B | Not Started | | Not Run | Seasonal Naive plus two variants (D-04, D-05) |
 | P-09 | Crews | Data Scientist Crew | Dev B | Not Started | | Not Run | M-04 to M-06 |
@@ -32,8 +32,8 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | P-12 | Agents | Business Recommendation Agent (Agent 7) | Shared | Not Started | | Not Run | Optional, deferred (D-16) |
 | P-13 | App | Streamlit dashboard (A: data screens, B: forecasting screens) | Dev A / Dev B | Not Started | | Not Run | D-12 |
 | P-14 | Storage | Supabase integration | Shared | Not Started | | Not Run | Optional, deferred (D-15); LocalRepository comes first (D-08) |
-| P-15 | Testing | Unit and integration testing | Shared | Not Started | | Not Run | [testing-strategy.md](testing-strategy.md) |
-| P-16 | Testing | End-to-end validation | Shared | Not Started | | Not Run | Also a phase gate, see [../CLAUDE.md](../CLAUDE.md) |
+| P-15 | Testing | Unit and integration testing | Shared | In Progress | #8 to #12 | Passed | 136 unit tests for the data layer on synthetic data; integration tests come with the crews and the Flow. [testing-strategy.md](testing-strategy.md) |
+| P-16 | Testing | End-to-end validation | Shared | In Progress | `feature/phase-gate-data` | Passed | `tests/e2e/test_data_pipeline.py`: validation, ETL, cleaning and contract through the CLIs on synthetic data (also reproducibility and graceful failure on corrupt input) and on the real data when `data/raw/` exists. Extended at each phase gate; the full run with crews and Flow comes later |
 | P-17 | Delivery | Final presentation and demo | Shared | Not Started | | Not Applicable | 10-12 slides and a demo of at most 5 minutes (M-14) |
 
 ## Branches and Pull Requests
@@ -50,7 +50,8 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | `feature/data-validation` | `dev` | Data Validator logic and `quality_report.json` (P-03) | Merged | #9 |
 | `feature/etl-long` | `dev` | Wide-to-long ETL for the approved items (P-02) | Merged | #10 |
 | `feature/data-cleaning` | `dev` | Cleaning rules (T-13) and `clean_data.csv` (P-03) | Merged | #11 |
-| `feature/dataset-contract` | `dev` | Dataset contract and Gate 1 check (P-06) | In review | PR into `dev` |
+| `feature/dataset-contract` | `dev` | Dataset contract and Gate 1 check (P-06) | Merged | #12 |
+| `feature/phase-gate-data` | `dev` | End-to-end data pipeline test and phase gate record | In review | PR into `dev` |
 
 Add one row per feature branch and its PR (target `dev`) as work starts.
 
@@ -68,17 +69,22 @@ Add one row per feature branch and its PR (target `dev`) as work starts.
 | 2026-11-18 | Kaggle M5 terms checked and recorded (T-04): allowed for education, with conditions | #7 |
 | 2026-11-18 | Roles confirmed: Lilach is Developer A, Michal is Developer B (T-11). M5 data downloaded by Lilach | n/a |
 | 2026-11-23 | Split (T-09) and product selection (T-03) approved; 20 `CA_1` items selected by deterministic stratified spread | #8 |
+| 2026-11-23 | Data Validator logic and `quality_report.json` (P-03) | #9 |
+| 2026-11-23 | Wide-to-long ETL for the 20 items; P-02 completed | #10 |
+| 2026-11-23 | Cleaning rules (T-13) and `clean_data.csv`; P-03 completed | #11 |
+| 2026-11-23 | Dataset contract and Gate 1 check; P-06 completed | #12 |
+| 2026-11-23 | **Phase gate passed (data foundation):** e2e test 5/5 including the real data; security review with no findings; `pip-audit` shows only the 5 known `chromadb` advisories (D-24), no new ones | PR pending |
 
 ## Current Blockers
 
 | Blocker | Affects | Needed from |
 |---|---|---|
-| Open items (T-05 to T-10, T-13 to T-21) | Several tasks | Developers, see [decisions.md](decisions.md) |
+| Open items (T-05 to T-08, T-10, T-14 to T-21) | Several tasks | Developers, see [decisions.md](decisions.md) |
 
 ## Next Actions
 
 1. Michal accepts the Kaggle rules on her own account and downloads the files into `data/raw/` (git-ignored); the files are never shared (T-04 conditions).
-2. Phase gate for the data foundation (CLAUDE.md): security review and the end-to-end test of the data pipeline (validation, ETL, cleaning, contract). Then EDA and insights (P-05) and Crew 1 (P-04). Michal can build features on `clean_data.csv` and the contract (P-07).
+2. Milestone PR `dev` into `main` after this gate PR is merged (D-23). Next phase: EDA and insights (P-05) and Crew 1 (P-04) for Dev A; features and baseline on `clean_data.csv` and the contract (P-07, P-08) for Dev B.
 3. Set a spend limit on the OpenAI project, create local `.env` files with `OPENAI_API_KEY`, then verify the model with one approved call (T-01).
 4. Run the data steps yourself: `uv run python -m src.data.cleaning` (validation, ETL and cleaning; writes `artifacts/clean/`), then `uv run python -m src.data.contract` (writes `dataset_contract.json` and `contract_check.json`). Single steps: `src.data.validation`, `src.data.etl`, `src.data.inspect_m5`. All outputs are git-ignored; `clean_data.csv` and `long_data.csv` are row-level M5 data and are never committed.
 5. Freeze the workstream interfaces in [agents-and-tasks.md](agents-and-tasks.md) at the end of week 1.
