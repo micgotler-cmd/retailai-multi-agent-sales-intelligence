@@ -8,9 +8,24 @@ a safety net).
 
 from __future__ import annotations
 
+import os
+
 from crewai import LLM
 
 from src.utils.config import ConfigError, LLMSettings
+
+# CrewAI sends anonymous telemetry and offers tracing by default. Both send data to an
+# outside service, so the project always turns them off; only OpenAI calls leave the machine.
+TELEMETRY_OFF = {
+    "CREWAI_DISABLE_TELEMETRY": "true",
+    "OTEL_SDK_DISABLED": "true",
+    "CREWAI_TRACING_ENABLED": "false",
+}
+
+
+def disable_crewai_telemetry() -> None:
+    """Turn off CrewAI telemetry and tracing for this process (always, not a default)."""
+    os.environ.update(TELEMETRY_OFF)
 
 
 def build_llm(settings: LLMSettings, use_fallback: bool = False) -> LLM:
@@ -19,6 +34,7 @@ def build_llm(settings: LLMSettings, use_fallback: bool = False) -> LLM:
     if not model:
         name = "OPENAI_FALLBACK_MODEL" if use_fallback else "OPENAI_MODEL"
         raise ConfigError(f"{name} is not set; add it to your local .env (see .env.example)")
+    disable_crewai_telemetry()
     return LLM(
         model=model,
         api_key=settings.api_key.reveal(),

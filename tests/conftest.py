@@ -10,6 +10,10 @@ import pandas as pd
 import pytest
 
 from src.data.scope import DataScope, parse_scope
+from src.utils.llm import disable_crewai_telemetry
+
+# Tests never send CrewAI telemetry or traces (no network in tests).
+disable_crewai_telemetry()
 
 N_DAYS = 200  # evaluation file length; the validation file has N_DAYS - 28 days
 STORE = "CA_1"
