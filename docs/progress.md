@@ -21,7 +21,7 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | P-01 | Setup | Repository and environment setup | Shared | Completed | `feature/env-setup`, #5 | Not Applicable | Repo, branches and ruleset done. Python 3.12 environment, `pyproject.toml`, `uv.lock` merged; dependency audit run (D-24). Partner runs `uv sync`; `.env` is created later (needs T-01) |
 | P-02 | Data | M5 dataset ingestion | Dev A | Completed | #8, #10 | Passed (unit) | Inspection (`src/data/inspect_m5.py`) and wide-to-long ETL (`src/data/etl.py`) merged. Real data: 38,820 long rows (20 items x 1,941 days) |
 | P-03 | Data | Data validation and cleaning | Dev A | Completed | #9, #11 | Passed (unit) | Validation (Agent 1 logic) and cleaning (Agent 2 logic, T-13) merged. Real data: validation pass; 31,278 clean rows, 0 missing prices |
-| P-04 | Crews | Data Analyst Crew | Dev A | In Progress | #17, `feature/analyst-crew` | Passed (unit, integration) | M-01 to M-03. Step 1 (settings, redacting logging, LLM factory) merged in #17. Step 2 in review: tools in `src/tools/` (T-20), three agents and three sequential tasks, insights citation check with template fallback, runner writing to `artifacts/runs/<run_id>/` with `crew1_report.json`; per-run call and token caps enforced via a CrewAI hook; tested end to end with a scripted fake LLM (no network). Step 3: first real OpenAI run after the spend limit and local `.env` keys (T-01, needs approval) |
+| P-04 | Crews | Data Analyst Crew | Dev A | In Progress | #17, #18, `feature/crew1-run-fixes` | Passed (unit, integration, real run) | M-01 to M-03. Step 1 (settings, logging, LLM factory) #17 and step 2 (tools, agents, crew, insights check, per-run caps) #18 merged. Step 3: first real OpenAI run done 2026-11-23: completed, 12 calls, 89,793 tokens; Agents 1 and 2 correct; Agent 3's insights were rejected for one citation without a number, so the template was used. Fixes in review: insights check accepts reference citations with clearer messages; report uses only the budget's call and token counts. A second real run (needs approval) should confirm Agent 3's own insights pass |
 | P-05 | Data | EDA and business insights | Dev A | Completed | #16 | Passed (unit) | M-02. `src/data/eda.py` (Agent 3 logic): training period only (T-09); 78 numbered facts in `eda_summary.json`, `eda_report.html` with 8 charts and aggregate tables, template `insights.md` citing fact ids. Normalized per-item metrics; SNAP, event and price findings are associations. The CrewAI agent comes in P-04 |
 | P-06 | Data | Dataset Contract | Dev A | Completed | #12 | Passed (unit, e2e) | `src/data/contract.py` writes `dataset_contract.json` (T-12, M-24) and runs the Gate 1 check (9 rules). Real clean data: all rules pass |
 | P-07 | ML | Feature engineering | Dev B | Not Started | | Not Run | Strategy proposed in D-06 |
@@ -56,7 +56,8 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | `main` (sync) | `dev` | Align history after the squash-merged release | Merged | #15 |
 | `feature/eda-insights` | `dev` | EDA and insights, Agent 3 logic (P-05) | Merged | #16 |
 | `feature/config-logging` | `dev` | Settings, redacting logging, LLM factory (P-04 step 1) | Merged | #17 |
-| `feature/analyst-crew` | `dev` | Crew 1 tools, agents, crew and runner (P-04 step 2) | In review | PR into `dev` |
+| `feature/analyst-crew` | `dev` | Crew 1 tools, agents, crew and runner (P-04 step 2) | Merged | #18 |
+| `feature/crew1-run-fixes` | `dev` | Fixes from the first real Crew 1 run; T-01 recorded | In review | PR into `dev` |
 
 Add one row per feature branch and its PR (target `dev`) as work starts.
 
@@ -92,7 +93,7 @@ Add one row per feature branch and its PR (target `dev`) as work starts.
 
 1. Michal accepts the Kaggle rules on her own account and downloads the files into `data/raw/` (git-ignored); the files are never shared (T-04 conditions).
 2. Milestone PR `dev` into `main` after this gate PR is merged (D-23). Next phase: EDA and insights (P-05) and Crew 1 (P-04) for Dev A; features and baseline on `clean_data.csv` and the contract (P-07, P-08) for Dev B.
-3. Set a spend limit on the OpenAI project, create local `.env` files with `OPENAI_API_KEY`, then verify the model with one approved call (T-01).
+3. Done 2026-11-23: spend limit set, local `.env` created, model verified with one approved call (T-01).
 4. Run the data steps yourself: `uv run python -m src.data.cleaning` (validation, ETL and cleaning; writes `artifacts/clean/`), then `uv run python -m src.data.contract` (writes `dataset_contract.json` and `contract_check.json`). Single steps: `src.data.validation`, `src.data.etl`, `src.data.inspect_m5`. All outputs are git-ignored; `clean_data.csv` and `long_data.csv` are row-level M5 data and are never committed.
 5. Freeze the workstream interfaces in [agents-and-tasks.md](agents-and-tasks.md) at the end of week 1.
 

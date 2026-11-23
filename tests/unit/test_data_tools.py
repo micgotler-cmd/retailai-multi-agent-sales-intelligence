@@ -144,10 +144,23 @@ def test_check_insights_accepts_cited_numbers():
     assert check_insights(GOOD, FACTS) == []
 
 
+def test_citation_after_a_word_is_a_reference():
+    """First real run: 'excluded due to zero sales [F07]' shows no number, so it is allowed."""
+    text = GOOD + " Closure days are excluded because of zero sales [F04]."
+    assert check_insights(text, FACTS) == []
+
+
+def test_messages_tell_the_model_how_to_fix():
+    problems = check_insights(GOOD.replace("2.31 [F02]", "2.40 [F02]") + " Up 7%.", FACTS)
+    assert any("write '2.31 [F02]'" in p for p in problems)
+    assert any("'7%.' is a number without a fact citation" in p for p in problems)
+
+
 @pytest.mark.parametrize(
     ("text", "problem"),
     [
-        (GOOD.replace("2.31 [F02]", "2.40 [F02]"), "must be written as '2.31'"),
+        (GOOD.replace("2.31 [F02]", "2.40 [F02]"), "must be exactly '2.31'"),
+        (GOOD.replace("2.31 [F02]", "about 2.3 [F02]"), "must be exactly '2.31'"),
         (GOOD.replace("[F04]", "[F99]"), "F99"),
         (GOOD + " Expect 10% growth.", "10%"),
         (GOOD.replace("not causal", "a clear effect"), "not causal"),
