@@ -255,7 +255,7 @@
   </ul>
   <h3>Decided (2026-11-18)</h3>
   <ul>
-    <li><b>Who does what:</b> Developer A takes data, cleaning, EDA, the data contract, Team 1 and the data screens. Developer B takes features, models, forecasting, Team 2 and the forecast screens. Together we do the Flow, Agent 7, RAG, Supabase, end-to-end tests and the presentation. Which person is A or B is still to be confirmed.</li>
+    <li><b>Who does what:</b> Developer A takes data, cleaning, EDA, the data contract, Team 1 and the data screens. Developer B takes features, models, forecasting, Team 2 and the forecast screens. Together we do the Flow, Agent 7, RAG, Supabase, end-to-end tests and the presentation. Lilach is Developer A and Michal is Developer B.</li>
     <li><b>AI provider:</b> OpenAI for all seven agents, set through environment variables. Proposed model: <code>gpt-4.1-mini</code> (backup <code>gpt-4o-mini</code>); the exact model and budget are still to be verified. We cap retries, calls and tokens to control cost.</li>
     <li><b>Store:</b> <code>CA_1</code>. <b>Products:</b> start with 20 (up to 50), chosen from the training period only, mixing high, medium and low sellers.</li>
     <li><b>Data contract:</b> a versioned JSON file, checked by plain Python code.</li>
@@ -267,7 +267,7 @@
     <li>Pick the exact 20 products and the train/validation/test dates (after we look at the data).</li>
   </ul>
   <h3>Next step</h3>
-  <p>Download the data, confirm who is A and B, then write a small read-only script that inspects the M5 files and confirms our chosen store and products can actually be forecast.</p>
+  <p>The first data script is done, and we agreed on the dates and products: the models learn from 2011 to March 2016, we compare them on the next 4 weeks, and the last 4 weeks (25 April to 22 May 2016) stay hidden for the final test. We picked 20 products from store CA_1: 7 fast, 7 medium and 6 slow sellers. Next we turn their data into a clean, long table (one row per product per day).</p>
 </section>
 
 <footer>

@@ -28,22 +28,39 @@ Fields not guaranteed to exist must not be assumed: the first pipeline step is a
 ## Scope (M-18)
 
 - One store: **`CA_1`** (T-02, Approved). The store id is a configuration value, so another store can be selected later; the MVP implements one store only.
-- Items: start with **20**, with the option to expand to 50 using the same method (T-03, approach Approved; exact items pending inspection).
+- Items: **20** (T-03, Approved 2026-11-23), with the option to expand to 50 using the same method.
 - Intermittent items are a documented limitation.
 
 ### Item selection method (T-03)
 
 | Rule | Detail |
 |---|---|
-| Data used | Training period only. The validation window and the final 28-day test window are never used to pick items (boundaries: T-09) |
+| Data used | Training period only (d_1 to d_1885, T-09). The validation window and the final 28-day test window are never used to pick items |
 | Pool | All items sold in `CA_1` |
-| Eligibility | Enough sales history in the training period; share of zero-sales days below a limit (extremely sparse items excluded); adequate weekly price coverage in training weeks. Numeric limits are set after the inspection |
-| Demand levels | Split eligible items into high, medium and low by mean daily units in the training period; take about equal numbers from each (for 20 items, 7/7/6) |
-| Choice within a level | Seeded random pick so the result is reproducible (seed recorded); department mix is a soft preference |
-| Record | Method, thresholds, seed and the selected `item_id` values go into `dataset_contract.json` (`selection` block) and into the list below |
-| Expansion | Going from 20 to 50 repeats the same method with a larger count and the same seed |
+| Eligibility | History of at least **365 days**, at most **80%** zero-sales days, price coverage of at least **95%** (definitions below) |
+| Demand levels | Rank eligible items by mean daily units (ties broken by `item_id`) and cut the ranking into three equal-size groups: high, medium, low. Take 7/7/6 for 20 items |
+| Choice within a level | **Deterministic stratified spread**, no randomness: sort the group by mean daily units, cut it into as many equal slices as items needed, and take the middle item of each slice (`spread_positions` in `src/data/inspect_m5.py`). The picks cover the group's demand range. No random seed is used |
+| Record | Method, thresholds and selected `item_id` values go into `dataset_contract.json` (`selection` block) and into the list below |
+| Expansion | Going from 20 to 50 repeats the same method with a larger count (17/17/16) |
 
-Selected `item_id` values: *pending dataset inspection.* Note: price coverage is used for selection and EDA even though `sell_price` is not a model feature (D-07), because the optional promotions analysis (O-03) and a possible price variant need it.
+**Definitions (all on days 1 to 1885 only)**
+
+- **First observed sale:** the first training day with `units_sold > 0`. M5 items show zeros before they were stocked, so the zeros before the first sale are treated as "not yet available", not as zero demand.
+- **History length:** the number of days from the first observed sale through d_1885, inclusive. Items never sold in training have a history of 0 and are not eligible.
+- **Mean daily units and zero-sales share:** computed over the same days (from the first sale onward).
+- **Price coverage:** the share of training weeks (`wm_yr_wk`), from the week of the first sale through the last training week, that have a `sell_price` for the item in `CA_1`. Prices are expected to be missing before an item becomes available, so those weeks are not counted. Inspection result: every `CA_1` item has a price in 100% of its weeks after first sale, no item's prices start after its first-sale week, and no item lacks prices in training, so missing prices only occur before availability (input for T-13).
+
+**Inspection result (2026-11-23):** 3,049 items in `CA_1`; 23 excluded for short history, 501 as too sparse, 0 for price coverage; 2,528 eligible (843 high, 842 medium, 843 low), so every group has far more items than it needs. Demand ranges: high 1.38 to 66.7 units/day, medium 0.66 to 1.38, low 0.23 to 0.66.
+
+**Selected `item_id` values (T-03, Approved):**
+
+| Group | Items (mean daily units in training) |
+|---|---|
+| High (7) | `FOODS_3_234` (9.29), `FOODS_1_162` (4.95), `HOUSEHOLD_1_494` (3.47), `FOODS_3_208` (2.51), `HOUSEHOLD_1_180` (2.00), `FOODS_3_190` (1.68), `FOODS_3_433` (1.47) |
+| Medium (7) | `FOODS_2_189` (1.30), `FOODS_3_060` (1.17), `FOODS_2_107` (1.06), `HOUSEHOLD_1_299` (0.94), `FOODS_3_488` (0.85), `HOUSEHOLD_1_091` (0.77), `FOODS_1_015` (0.69) |
+| Low (6) | `HOUSEHOLD_2_219` (0.62), `FOODS_3_427` (0.55), `FOODS_2_007` (0.48), `FOODS_2_179` (0.41), `HOUSEHOLD_2_003` (0.35), `HOBBIES_1_002` (0.28) |
+
+Reproduce with `uv run python -m src.data.inspect_m5 --store-id CA_1` (writes `artifacts/inspection/`, git-ignored). Note: price coverage is used for selection and EDA even though `sell_price` is not a model feature (D-07), because the optional promotions analysis (O-03) and a possible price variant need it.
 
 ## ETL: wide to long
 
@@ -68,7 +85,7 @@ Normalized fields (spec s5): `date, store_id, item_id, dept_id, cat_id, state_id
 | `schema_version` | Contract version (for example `1.0.0`); changed whenever the structure changes |
 | `dataset` | Name, source, files, download date, whether the terms check (T-04) was done |
 | `granularity` | Keys `store_id`, `item_id`, `date`; daily frequency; one row per key combination |
-| `selection` | Store, selected `item_id` list, selection method and seed (see above) |
+| `selection` | Store, selected `item_id` list, selection method and thresholds (see above; no seed, the method is deterministic) |
 | `fields` | For each field: name, type, nullable, allowed range or allowed values |
 | `missing_value_rules` | What is allowed to be missing and how it is handled (for example prices, T-13) |
 | `quality_expectations` | Limits such as maximum share of missing values, no duplicate keys, no gaps in dates |
@@ -88,8 +105,17 @@ Daily `units_sold` for the next 28 days, per `item_id` x `store_id`.
  d_1                                                          last day
 ```
 
-- No random shuffling. The test window is the final 28 days of history and is never used for training or tuning.
-- Provisional boundaries: test = last 28 days, validation = the 28 days before. Exact day indices: TBD after data inspection (T-09).
+| Part | Days | Dates |
+|---|---|---|
+| Train | d_1 to d_1885 | 2011-01-29 to 2016-03-27 |
+| Validation | d_1886 to d_1913 | 2016-03-28 to 2016-04-24 |
+| Test | d_1914 to d_1941 | 2016-04-25 to 2016-05-22 |
+
+Approved 2026-11-23 (T-09). Source file: `sales_train_evaluation.csv` (d_1 to d_1941); `sales_train_validation.csv` is an exact prefix of it, so it is not needed.
+
+- Chronological splitting only; no random shuffling.
+- The test period is excluded from model selection, hyperparameter tuning, product selection and feature engineering decisions. It is used once, for the final evaluation.
+- Models are compared and tuned on the validation window. After model selection, retraining on train plus validation is permitted before the final test evaluation; whether we do it is recorded under T-16.
 
 ## Features (M-16, spec s8)
 
@@ -111,7 +137,8 @@ The MVP model does not use `sell_price`, because future weekly prices are not kn
 
 ## Leakage prevention (M-17)
 
-- A feature for date `t` uses only observations available at the forecast origin (data at least 28 days before `t` under D-06).
+- A feature for date `t` uses only information available at the forecast origin (data at least 28 days before `t` under D-06). The forecast origin is the last day before the forecast window: d_1885 for validation, d_1913 for test.
+- Lags, rolling statistics and covariates are checked against the full 28-day horizon: no feature for any of the 28 days may use actual sales from inside the forecast window. Only covariates known in advance (calendar, events, SNAP) are used for future days.
 - Rolling features exclude the target day.
 - Test observations are never used for fitting, feature selection or tuning.
 - Unknown future prices are not assumed.
@@ -125,9 +152,11 @@ The MVP model does not use `sell_price`, because future weekly prices are not kn
 | Ridge Regression | Variant 1 (Proposed) |
 | Random Forest Regressor | Variant 2 (Proposed) |
 
-- Metrics: MAE and RMSE on the same 28-day holdout, overall and per item. Seeds fixed.
+- Evaluation covers the complete 28-day horizon from one forecast origin: all 28 days are predicted without using actual sales from inside the window (no one-day-ahead evaluation with true lags).
+- The Seasonal Naive baseline and at least two ML model variations are compared on MAE and RMSE (D-04).
+- Metrics are reported in aggregate and per product, and also per demand group (high, medium, low), so differences between groups are visible. Seeds fixed.
 - MAPE is avoided because intermittent items contain many zeros.
-- Hyperparameters are tuned on the validation window only. Whether the final model is refit on train plus validation before the test forecast: TBD (T-16), must be documented either way.
+- Hyperparameters are tuned on the validation window only. Refitting on train plus validation before the test forecast is permitted (T-09); whether we do it: T-16, documented either way.
 - Outputs: `features.csv`, `model.joblib`, `evaluation_report.md`, `model_card.md` (M-04, M-06).
 
 ## Model card content (M-06)

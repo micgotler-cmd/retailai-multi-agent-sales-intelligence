@@ -64,7 +64,7 @@ Contract file format: versioned JSON (T-12, Approved; see [data-and-ml.md](data-
 
 ## Ownership (spec s15, T-11 structure Approved)
 
-Who is Developer A and who is B: **pending** (T-11); [progress.md](progress.md) shows roles (Dev A, Dev B, Shared) until then.
+Developer A is Lilach, Developer B is Michal (T-11, confirmed 2026-11-18); [progress.md](progress.md) shows roles (Dev A, Dev B, Shared).
 
 | Area | Developer A | Developer B | Shared |
 |---|---|---|---|

@@ -14,14 +14,14 @@ Shared development tracker for RetailAI. Requirements: [project-specification.md
 
 ## Development Progress
 
-Task status: Not Started, In Progress, Blocked, In Review, Completed. Test status: Not Run, Passed, Failed, Not Applicable. Owners show the responsibility role (Dev A, Dev B, Shared) from T-11; which person is A or B is still pending ([decisions.md](decisions.md)).
+Task status: Not Started, In Progress, Blocked, In Review, Completed. Test status: Not Run, Passed, Failed, Not Applicable. Owners show the responsibility role (Dev A, Dev B, Shared) from T-11; A is Lilach, B is Michal ([decisions.md](decisions.md), T-11).
 
 | ID | Component | Task | Owner | Status | Branch / PR | Tests | Notes |
 |---|---|---|---|---|---|---|---|
 | P-01 | Setup | Repository and environment setup | Shared | Completed | `feature/env-setup`, #5 | Not Applicable | Repo, branches and ruleset done. Python 3.12 environment, `pyproject.toml`, `uv.lock` merged; dependency audit run (D-24). Partner runs `uv sync`; `.env` is created later (needs T-01) |
-| P-02 | Data | M5 dataset ingestion | Dev A | Not Started | | Not Run | Unblocked once the T-04 record is merged: each developer accepts the Kaggle rules and downloads their own copy into `data/raw/`. Store is `CA_1` (T-02); 20 items chosen by the T-03 method after inspection |
+| P-02 | Data | M5 dataset ingestion | Dev A | In Progress | `feature/data-inspection` | Passed (unit) | Step 1, read-only inspection (`src/data/inspect_m5.py`) done: files and columns verified, calendar has no gaps, `sales_train_validation` is an exact prefix of `sales_train_evaluation`. Split (T-09) and 20 items (T-03) approved and recorded 2026-11-23. Next: ETL wide-to-long |
 | P-03 | Data | Data validation and cleaning | Dev A | Not Started | | Not Run | Null-price policy TBD (T-13) |
-| P-04 | Crews | Data Analyst Crew | Dev A | Not Started | | Not Run | M-01 to M-03 |
+| P-04 | Crews | Data Analyst Crew | Dev A | Not Started | | Not Run | M-01 to M-03. Plan: move the reusable checks from `src/data/inspect_m5.py` (files, columns, calendar gaps, duplicates, negative values) into `src/data/validation.py` as the Data Validator tools, so the logic exists once; put the 20 approved item IDs and the T-09 split days in a config file under `config/` for the Data Cleaner and the contract; keep `inspect_m5` as a dev script (rerun to expand to 50 items) that imports the shared checks. The crew never re-selects items at runtime |
 | P-05 | Data | EDA and business insights | Dev A | Not Started | | Not Run | M-02 |
 | P-06 | Data | Dataset Contract | Dev A | Not Started | | Not Run | Versioned JSON, deterministic validation (T-12 Approved), M-24 |
 | P-07 | ML | Feature engineering | Dev B | Not Started | | Not Run | Strategy proposed in D-06 |
@@ -45,7 +45,8 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | `docs/add-simple-plan` | `dev` | Simple-language plan overview (`project-plan-simple.html`) | Merged | #3 |
 | `feature/env-setup` | `dev` | Python 3.12 environment with uv (D-13) | Merged | #5 |
 | `docs/finalize-decisions` | `dev` | Record T-01, T-02, T-03, T-04, T-11, T-12 | Merged | #6 |
-| `docs/t04-kaggle-terms` | `dev` | Record the Kaggle M5 terms check (T-04) | In review | PR into `dev` |
+| `docs/t04-kaggle-terms` | `dev` | Record the Kaggle M5 terms check (T-04) | Merged | #7 |
+| `feature/data-inspection` | `dev` | Read-only M5 inspection; T-09 split and T-03 items (P-02) | In review | PR into `dev` |
 
 Add one row per feature branch and its PR (target `dev`) as work starts.
 
@@ -60,7 +61,9 @@ Add one row per feature branch and its PR (target `dev`) as work starts.
 | 2026-11-18 | Simple-language plan overview added to `dev` and `main` | #3, #4 |
 | 2026-11-18 | Planning decisions recorded: T-11 (responsibilities), T-01 (OpenAI provider), T-02 (`CA_1`), T-03 (approach), T-12 (JSON contract); T-04 pending. Documentation only; no development task is complete | #6 |
 | 2026-11-18 | Python 3.12 environment merged (P-01) | #5 |
-| 2026-11-18 | Kaggle M5 terms checked and recorded (T-04): allowed for education, with conditions | PR pending |
+| 2026-11-18 | Kaggle M5 terms checked and recorded (T-04): allowed for education, with conditions | #7 |
+| 2026-11-18 | Roles confirmed: Lilach is Developer A, Michal is Developer B (T-11). M5 data downloaded by Lilach | n/a |
+| 2026-11-23 | Split (T-09) and product selection (T-03) approved; 20 `CA_1` items selected by deterministic stratified spread | PR pending |
 
 ## Current Blockers
 
@@ -70,10 +73,10 @@ Add one row per feature branch and its PR (target `dev`) as work starts.
 
 ## Next Actions
 
-1. After the T-04 PR is merged, each developer accepts the Kaggle rules on their own account and downloads the files into `data/raw/` (git-ignored); never share the files (T-04 conditions).
-2. Confirm who is Developer A and who is B (T-11).
+1. Michal accepts the Kaggle rules on her own account and downloads the files into `data/raw/` (git-ignored); the files are never shared (T-04 conditions).
+2. Next data step (P-02): ETL wide-to-long for the 20 approved items, then validation and cleaning (P-03, null-price policy T-13). Model implementation and training wait (P-07, P-08).
 3. Set a spend limit on the OpenAI project, create local `.env` files with `OPENAI_API_KEY`, then verify the model with one approved call (T-01).
-4. Run the read-only dataset inspection (first implementation task, see [implementation-plan.md](implementation-plan.md)); it settles the item thresholds (T-03) and split dates (T-09).
+4. Run the inspection yourself with `uv run python -m src.data.inspect_m5 --store-id CA_1`; it writes `artifacts/inspection/` (git-ignored).
 5. Freeze the workstream interfaces in [agents-and-tasks.md](agents-and-tasks.md) at the end of week 1.
 
 ## Decision Log References
@@ -83,7 +86,7 @@ Add one row per feature branch and its PR (target `dev`) as work starts.
 | P-02, P-03 | D-02, D-03, T-02, T-03, T-04, T-13 |
 | P-04 to P-10 | T-01 (OpenAI), T-11 |
 | P-06 | T-12 (Approved) |
-| P-07, P-08 | D-04 to D-07, T-09, T-16 |
+| P-07, P-08 | D-04 to D-07, T-09 (Approved), T-16 |
 | P-11, P-12 | D-14, D-16, T-14 |
 | P-13 | D-12 |
 | P-14 | D-08 to D-11, D-15 |
