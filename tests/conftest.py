@@ -8,8 +8,30 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from src.data.scope import DataScope, parse_scope
+
 N_DAYS = 200  # evaluation file length; the validation file has N_DAYS - 28 days
 STORE = "CA_1"
+
+ITEMS = ["FOODS_1_001", "FOODS_1_005", "FOODS_1_009", "HOBBIES_1_001"]
+
+
+def make_scope(items: list[str] = ITEMS, store: str = STORE, last_day: int = N_DAYS) -> DataScope:
+    """A DataScope for the synthetic fixture: 28-day validation and test at the end."""
+    return parse_scope(
+        {
+            "schema_version": "1.0.0",
+            "store_id": store,
+            "sales_file": "sales_train_evaluation.csv",
+            "horizon_days": 28,
+            "split": {
+                "train": {"first_day": 1, "last_day": last_day - 56},
+                "validation": {"first_day": last_day - 55, "last_day": last_day - 28},
+                "test": {"first_day": last_day - 27, "last_day": last_day},
+            },
+            "items": [{"item_id": i, "demand_group": "high"} for i in items],
+        }
+    )
 
 
 def _item_units(rng: np.random.Generator) -> dict[str, np.ndarray]:
@@ -39,9 +61,19 @@ def write_synthetic_m5(raw_dir: Path, seed: int = 0) -> Path:
             "wm_yr_wk": 11101 + np.arange(len(dates)) // 7,
             "weekday": dates.day_name(),
             "d": [f"d_{i}" for i in range(1, len(dates) + 1)],
-            "snap_CA": 0,
+            "event_name_1": None,
+            "event_type_1": None,
+            "event_name_2": None,
+            "event_type_2": None,
+            # SNAP days differ by state, as in M5: CA on days 1-10, TX on days 11-15
+            "snap_CA": (dates.day <= 10).astype(int),
+            "snap_TX": ((dates.day > 10) & (dates.day <= 15)).astype(int),
         }
     )
+    cal.loc[cal["date"] == "2011-02-06", ["event_name_1", "event_type_1"]] = [
+        "SuperBowl",
+        "Sporting",
+    ]
     cal.to_csv(raw_dir / "calendar.csv", index=False)
 
     units = _item_units(rng)

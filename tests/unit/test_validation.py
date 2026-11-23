@@ -9,27 +9,7 @@ import pandas as pd
 import pytest
 
 from src.data import validation as v
-from src.data.scope import parse_scope
-from tests.conftest import N_DAYS, STORE
-
-ITEMS = ["FOODS_1_001", "FOODS_1_005", "FOODS_1_009", "HOBBIES_1_001"]
-
-
-def make_scope(items: list[str] = ITEMS, store: str = STORE, last_day: int = N_DAYS):
-    return parse_scope(
-        {
-            "schema_version": "1.0.0",
-            "store_id": store,
-            "sales_file": "sales_train_evaluation.csv",
-            "horizon_days": 28,
-            "split": {
-                "train": {"first_day": 1, "last_day": last_day - 56},
-                "validation": {"first_day": last_day - 55, "last_day": last_day - 28},
-                "test": {"first_day": last_day - 27, "last_day": last_day},
-            },
-            "items": [{"item_id": i, "demand_group": "high"} for i in items],
-        }
-    )
+from tests.conftest import ITEMS, N_DAYS, STORE, make_scope
 
 
 def rewrite(path: Path, change) -> None:
