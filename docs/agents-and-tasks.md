@@ -29,6 +29,8 @@ Agents 1-6 are mandatory (M-01). Agent 7 is an optional, time-boxed enhancement 
 
 Crew 1 ends at Gate 1 (contract matches clean data). Crew 2 must not start if it fails.
 
+**Implementation (P-04):** agents in `src/agents/data_analyst_agents.py`, tasks and crew in `src/crews/data_analyst_crew.py`, tools in `src/tools/data_tools.py` (T-20). Each agent has only its own tools: Data Validator `validate_raw_data`; Data Cleaner `build_clean_data`; Business Analyst `run_eda`, `write_dataset_contract`, `save_insights`. Tools are bound to one run folder `artifacts/runs/<run_id>/`, so agents never choose file paths, and they return JSON summaries only (no data rows to the LLM, T-04). A tool refuses to run when its prerequisite is missing or failed (for example cleaning after a failed validation). `save_insights` accepts the insights only if every number is a fact's display value followed by its id (`src/data/insights_check.py`); otherwise the runner keeps the deterministic template insights and records it. After the crew, the runner checks the outputs itself and writes `crew1_report.json` (status, problems, insights source, token usage). Agents run without delegation and with capped iterations (4, Business Analyst 7). The per-run call and token caps (`LLM_MAX_CALLS_PER_RUN`, `LLM_MAX_TOKENS_PER_RUN`) are required arguments of the runner and are enforced for every LLM call; calls and tokens used are saved in `crew1_report.json` (`llm_budget`).
+
 ## Crew 2: Data Scientist (M-04, M-05, M-06)
 
 | Task | Owner agent | Done when |
