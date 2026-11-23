@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Four weeks, two developers. Schedule source: section 16 of [project-specification.md](project-specification.md). Ownership: Developer A (Crew 1, data views), Developer B (Crew 2, forecasting views); who is who is TBD (T-11). Open choices: [decisions.md](decisions.md).
+Four weeks, two developers. Schedule source: section 16 of [project-specification.md](project-specification.md). Ownership follows T-11 (see [agents-and-tasks.md](agents-and-tasks.md)): Developer A does data and Crew 1, Developer B does ML and Crew 2, and the Flow, Agent 7, RAG, Supabase, end-to-end testing and the presentation are shared. Developer A is Lilach, Developer B is Michal (T-11, confirmed 2026-11-18). Open choices: [decisions.md](decisions.md).
 
 **Priority order:** 1. mandatory academic requirements, 2. working end-to-end forecasting, 3. Agent 7 and RAG, 4. Supabase, 5. optional improvements. **MVP milestone:** end of week 3, a local end-to-end run (both crews, both gates, Streamlit) with no RAG and no Supabase.
 
@@ -25,9 +25,9 @@ Dates in the chart are placeholders only; actual start date is TBD (T-19).
 | | |
 |---|---|
 | Objective | Repository and environment ready; data inspected; baseline works |
-| Dev A | Download M5 (T-04), inspect files, ETL wide-to-long, choose store and items (T-02, T-03), draft contract (T-12), start Crew 1 tools |
-| Dev B | Python 3.12 environment (D-13), feature and baseline PoC (Seasonal Naive plus Ridge), `Repository` interface and `LocalRepository` |
-| Both | Confirm open items T-01, T-02, T-03, T-09 |
+| Dev A | Check the Kaggle M5 terms and record the result (T-04), then download; inspect files, ETL wide-to-long, select the 20 `CA_1` items by the T-03 method, draft the JSON contract (T-12), start Crew 1 tools, create the synthetic test fixture |
+| Dev B | Feature and baseline PoC (Seasonal Naive plus Ridge) on the fixture first, then on real data once T-04 is done; `Repository` interface and `LocalRepository` |
+| Both | Settings module for OpenAI configuration with no calls yet; set the OpenAI spend limit; verify the model with one approved call (T-01); freeze the interfaces in [agents-and-tasks.md](agents-and-tasks.md); settle T-09 |
 | Deliverables | Clean long-format data, draft contract, working baseline, repo with CI skeleton |
 | Exit | Clean data and a working baseline |
 | Effort | About 12-15 h per developer |
@@ -47,9 +47,10 @@ Dates in the chart are placeholders only; actual start date is TBD (T-19).
 | | |
 |---|---|
 | Objective | End-to-end execution with validation and graceful failure |
-| Dev A | Streamlit screens (Home, Data Quality, EDA, Insights, Run History) |
-| Dev B | CrewAI Flow, Gate 1 and Gate 2, logging, Forecast and Model Evaluation screens, Flow integration tests |
-| Then | Agent 7 and RAG in a 4-6 h timebox (D-16) if the MVP gate is met; Supabase only after that (D-15) |
+| Dev A | Data Streamlit screens (Home, Data Quality, EDA, Insights) |
+| Dev B | Forecasting Streamlit screens (Forecast, Model Evaluation) |
+| Shared | CrewAI Flow, Gate 1 and Gate 2, logging, Run History screen, Flow integration and end-to-end tests |
+| Then (shared) | Agent 7 and RAG in a 4-6 h timebox (D-16) if the MVP gate is met; Supabase only after that (D-15) |
 | Exit | One command runs the full local pipeline and the UI shows its results |
 
 ## Week 4: QA and delivery
@@ -57,7 +58,7 @@ Dates in the chart are placeholders only; actual start date is TBD (T-19).
 | | |
 |---|---|
 | Objective | Stable submission package |
-| Tasks | Bug fixes, end-to-end and failure tests, README setup and reproduction check on a clean machine, 10-12 slide presentation, demo video of at most 5 minutes (M-14), decision on committing final artifacts (T-07) |
+| Tasks | Bug fixes, end-to-end and failure tests, README setup and reproduction check on a clean machine, 10-12 slide presentation (shared), demo video of at most 5 minutes (M-14), decision on committing final artifacts (T-07) |
 | Optional | Supabase adapter and migrations; deployment (D-17) |
 | Exit | Submission package complete; each developer has a documented merged PR (M-12) |
 
@@ -65,7 +66,8 @@ Dates in the chart are placeholders only; actual start date is TBD (T-19).
 
 - ETL and contract (A) with features and models (B), once the contract and `clean_data.csv` format are frozen.
 - Streamlit pages (A/B) with Flow work, once artifact formats are frozen.
-- Repository interface (B, week 1) with everything else.
+- Repository interface (week 1) with everything else.
+- Everything crossing between A and B goes through the frozen interfaces in [agents-and-tasks.md](agents-and-tasks.md), so neither waits for the other's code.
 
 **If late, cut in this order:** Supabase, then Agent 7/RAG, then promotions analysis. Never cut the mandatory Flow, artifacts or forecasts.
 
@@ -113,4 +115,4 @@ Copy `.env.example` to `.env` locally and fill in your own keys; never commit `.
 
 ## Recommended first implementation task
 
-A read-only dataset inspection script that reports shape, date range, missing dates, price coverage and zero rate per item, and proposes the store and item subset. This validates feasibility before any crew is written (informs T-02, T-03, T-09).
+A read-only dataset inspection script that reports shape, date range, missing dates, price coverage and zero rate per item, and proposes the store and item subset. This validates feasibility before any crew is written (informs T-03 and T-09); it runs only after the Kaggle terms check (T-04) is recorded.

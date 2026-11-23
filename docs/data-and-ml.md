@@ -10,14 +10,57 @@ Dataset handling and forecasting approach. Requirements: M-16 to M-18, M-20, M-2
 | `calendar.csv` | Date for each `d`, `wm_yr_wk`, events, SNAP flags | Date mapping, known future features |
 | `sell_prices.csv` | Weekly price per `store_id`, `item_id`, `wm_yr_wk` | Price analysis (EDA) |
 
-Data is downloaded manually from Kaggle after the usage terms are reviewed (T-04). Raw data and processed data are git-ignored and never committed. The dataset has no promotion, coupon or discount-percentage field; price changes are not treated as promotions.
+Data is downloaded manually from Kaggle, and only **after each developer has accepted the competition rules on their own Kaggle account (T-04, Approved with conditions)**. Raw and processed data are git-ignored and never committed; the repository holds only download instructions. Redistribution is not assumed to be allowed, so test fixtures are synthetic (M5-shaped), never real M5 rows.
+
+**Terms check and download steps (T-04)**
+1. Log in to Kaggle, open the *M5 Forecasting - Accuracy* competition, and read its **Rules** and **Data** pages (including the data license and any "accept rules" step).
+2. Confirm that educational / coursework use is allowed and note any limit on redistribution or on publishing results.
+3. Record the outcome in this section: date, who checked, link, conclusion. Until that is recorded, nobody downloads or uses the data.
+4. Download the three files through the Kaggle website (or the Kaggle CLI with a personal token kept outside the repo; installing the CLI needs approval) and place them in a root `data/raw/` folder, which Git ignores.
+5. Record the dataset version/date in `dataset_contract.json` and the run manifest.
+
+**Terms check result (T-04):** checked 2026-11-18 by Lilach Afik on the competition Rules page, section 7 "Competition Data" (the Data tab license says "Subject to Competition Rules"). Rule 7A allows non-commercial use for academic research and education. Rule 7B forbids passing the data to anyone who has not accepted the rules. Conclusion: **allowed, with conditions**: (1) each developer accepts the rules on their own Kaggle account and downloads their own copy; (2) no M5 data in the public repository: no raw files and no row-level copies such as `clean_data.csv`; (3) anyone else who runs the project (for example graders) downloads the data from Kaggle themselves; (4) slides, demo and dashboard show aggregates, charts, metrics and forecasts only, with no raw data tables or data downloads; a public deployment (D-17) needs a fresh check; (5) if Supabase ever holds M5-derived rows, the project stays private to the two developers; (6) LLM agents receive summaries, statistics and metrics, not bulk raw rows. The download contains `calendar.csv`, `sales_train_validation.csv` (d_1 to d_1913), `sales_train_evaluation.csv` (d_1 to d_1941), `sell_prices.csv` and `sample_submission.csv`, about 450 MB in total; which sales file we use is decided during the inspection (T-09).
+
+The dataset has no promotion, coupon or discount-percentage field; price changes are not treated as promotions.
 
 Fields not guaranteed to exist must not be assumed: the first pipeline step is a read-only inspection of the real files (shape, date range, missing dates, price coverage, zero rate per item).
 
 ## Scope (M-18)
 
-- One store (T-02, `CA_1` suggested) and 20-50 items (T-03).
-- Selection rule is TBD and must be recorded in `dataset_contract.json`. Candidate criteria: complete history, limited share of zero-sales days, mix of departments. Intermittent items are a documented limitation.
+- One store: **`CA_1`** (T-02, Approved). The store id is a configuration value, so another store can be selected later; the MVP implements one store only.
+- Items: **20** (T-03, Approved 2026-11-23), with the option to expand to 50 using the same method.
+- Intermittent items are a documented limitation.
+
+### Item selection method (T-03)
+
+| Rule | Detail |
+|---|---|
+| Data used | Training period only (d_1 to d_1885, T-09). The validation window and the final 28-day test window are never used to pick items |
+| Pool | All items sold in `CA_1` |
+| Eligibility | History of at least **365 days**, at most **80%** zero-sales days, price coverage of at least **95%** (definitions below) |
+| Demand levels | Rank eligible items by mean daily units (ties broken by `item_id`) and cut the ranking into three equal-size groups: high, medium, low. Take 7/7/6 for 20 items |
+| Choice within a level | **Deterministic stratified spread**, no randomness: sort the group by mean daily units, cut it into as many equal slices as items needed, and take the middle item of each slice (`spread_positions` in `src/data/inspect_m5.py`). The picks cover the group's demand range. No random seed is used |
+| Record | Method, thresholds and selected `item_id` values go into `dataset_contract.json` (`selection` block) and into the list below |
+| Expansion | Going from 20 to 50 repeats the same method with a larger count (17/17/16) |
+
+**Definitions (all on days 1 to 1885 only)**
+
+- **First observed sale:** the first training day with `units_sold > 0`. M5 items show zeros before they were stocked, so the zeros before the first sale are treated as "not yet available", not as zero demand.
+- **History length:** the number of days from the first observed sale through d_1885, inclusive. Items never sold in training have a history of 0 and are not eligible.
+- **Mean daily units and zero-sales share:** computed over the same days (from the first sale onward).
+- **Price coverage:** the share of training weeks (`wm_yr_wk`), from the week of the first sale through the last training week, that have a `sell_price` for the item in `CA_1`. Prices are expected to be missing before an item becomes available, so those weeks are not counted. Inspection result: every `CA_1` item has a price in 100% of its weeks after first sale, no item's prices start after its first-sale week, and no item lacks prices in training, so missing prices only occur before availability (input for T-13).
+
+**Inspection result (2026-11-23):** 3,049 items in `CA_1`; 23 excluded for short history, 501 as too sparse, 0 for price coverage; 2,528 eligible (843 high, 842 medium, 843 low), so every group has far more items than it needs. Demand ranges: high 1.38 to 66.7 units/day, medium 0.66 to 1.38, low 0.23 to 0.66.
+
+**Selected `item_id` values (T-03, Approved):**
+
+| Group | Items (mean daily units in training) |
+|---|---|
+| High (7) | `FOODS_3_234` (9.29), `FOODS_1_162` (4.95), `HOUSEHOLD_1_494` (3.47), `FOODS_3_208` (2.51), `HOUSEHOLD_1_180` (2.00), `FOODS_3_190` (1.68), `FOODS_3_433` (1.47) |
+| Medium (7) | `FOODS_2_189` (1.30), `FOODS_3_060` (1.17), `FOODS_2_107` (1.06), `HOUSEHOLD_1_299` (0.94), `FOODS_3_488` (0.85), `HOUSEHOLD_1_091` (0.77), `FOODS_1_015` (0.69) |
+| Low (6) | `HOUSEHOLD_2_219` (0.62), `FOODS_3_427` (0.55), `FOODS_2_007` (0.48), `FOODS_2_179` (0.41), `HOUSEHOLD_2_003` (0.35), `HOBBIES_1_002` (0.28) |
+
+Reproduce with `uv run python -m src.data.inspect_m5 --store-id CA_1` (writes `artifacts/inspection/`, git-ignored). Note: price coverage is used for selection and EDA even though `sell_price` is not a model feature (D-07), because the optional promotions analysis (O-03) and a possible price variant need it.
 
 ## ETL: wide to long
 
@@ -31,15 +74,44 @@ flowchart LR
     V --> C[clean_data.csv + dataset_contract.json]
 ```
 
-Normalized fields (spec s5): `date, store_id, item_id, dept_id, cat_id, state_id, units_sold, sell_price, wm_yr_wk, event_name_1, event_type_1`, SNAP indicator. Missing prices are examined and handled per a documented null policy (T-13), never silently imputed. Validation rules for each field are in the table in [project-specification.md](project-specification.md) (section 5).
+Normalized fields (spec s5): `date, store_id, item_id, dept_id, cat_id, state_id, units_sold, sell_price, wm_yr_wk, event_name_1, event_type_1`, SNAP indicator. Missing prices are examined and handled per the null policy below (T-13), never silently imputed. Field validation rules are in the table in [project-specification.md](project-specification.md) (section 5).
 
-## Dataset contract (M-24)
+## Dataset contract (M-24, T-12 Approved)
 
-`dataset_contract.json` records: schema version, source and dataset version, field names and types, key columns (`date`, `store_id`, `item_id`), ranges, allowed values, missing-value policy, assumptions, constraints, and the item/store subset rule. Crew 2 and Gate 1 validate against it. Format (JSON Schema or custom): TBD (T-12).
+`dataset_contract.json` is a **versioned JSON file** written by the Business Analyst (Crew 1) and read by Gate 1, Crew 2 and the Flow. It describes the dataset so that data can be checked mechanically.
+
+| Section | Content |
+|---|---|
+| `schema_version` | Contract version (for example `1.0.0`); changed whenever the structure changes |
+| `dataset` | Name, source, files, download date, whether the terms check (T-04) was done |
+| `granularity` | Keys `store_id`, `item_id`, `date`; daily frequency; one row per key combination |
+| `selection` | Store, selected `item_id` list, selection method and thresholds (see above; no seed, the method is deterministic) |
+| `fields` | For each field: name, type, nullable, allowed range or allowed values |
+| `missing_value_rules` | What is allowed to be missing and how it is handled (for example prices, T-13) |
+| `quality_expectations` | Limits such as maximum share of missing values, no duplicate keys, no gaps in dates |
+| `validation_rules` | Named checks the validator runs (for example `units_sold >= 0`, `sell_price > 0 when present`) |
+| `assumptions`, `limitations` | Plain-language lists (for example "no promotion flag in M5") |
+
+Validation is **deterministic Python** (plain pandas checks, one function per rule, readable error messages) in `src/data/`. No schema-management framework is added. Gate 1 and the Feature Engineer both run it; a failure stops the Flow (M-08, M-19). The exact field list is finalized when the first clean data exists.
+
+**Implementation (P-06):** `src/data/contract.py`. `uv run python -m src.data.contract` reads `artifacts/clean/clean_data.csv` and `cleaning_log.json`, writes `dataset_contract.json` and checks the data against it (`contract_check.json`). Allowed values for store, items, departments, categories and state come from the approved scope, not from the data, so the check is not circular; event types and the week range are taken from the clean data. The `dataset` section records the size and SHA-256 checksum of each raw file used, so the exact data version is known even though each developer downloads separately (T-04). The Gate 1 check runs nine rules: `columns_match`, `field_types`, `no_unexpected_nulls`, `allowed_values`, `value_ranges`, `unique_keys`, `dates_continuous_per_item`, `no_future_dates`, `sorted_by_item_and_date`. The contract holds no data rows.
 
 ## Forecast target (D-03)
 
 Daily `units_sold` for the next 28 days, per `item_id` x `store_id`.
+
+## Cleaning (T-13, Approved)
+
+Implemented in `src/data/cleaning.py`; `uv run python -m src.data.cleaning` runs validation, ETL and cleaning and writes `clean_data.csv`, `cleaning_log.json` and `quality_report.json` to `artifacts/clean/` (git-ignored; `clean_data.csv` is row-level M5 data and is never committed, T-04).
+
+| Rule | Detail |
+|---|---|
+| Rows before first sale | Dropped. The first sale is the first training day (d_1 to d_1885) with `units_sold > 0`; validation and test data never set it. Each item's series then runs without gaps to d_1941 |
+| Store closures | `store_closed = 1` on 25 December, otherwise 0; `units_sold` stays 0. The validator found the store sold nothing on exactly these days in all five years. A known calendar date, so it is available at forecast time |
+| Missing prices | Never imputed. A missing or non-positive `sell_price` on a kept row fails the cleaning. In `CA_1`, prices start on or before each item's first sale, so after rule 1 no price is missing |
+| Final checks | Unique keys, `units_sold >= 0`, no date gaps per item, sorted by `item_id`, `date` |
+
+Result on the real data: 38,820 long rows become 31,278 clean rows; 7,542 pre-launch rows dropped (17 of 20 items; first sales from 2011-01-29 to 2014-02-09); 85 closure rows flagged; 0 missing prices.
 
 ## Chronological split (M-17)
 
@@ -48,8 +120,17 @@ Daily `units_sold` for the next 28 days, per `item_id` x `store_id`.
  d_1                                                          last day
 ```
 
-- No random shuffling. The test window is the final 28 days of history and is never used for training or tuning.
-- Provisional boundaries: test = last 28 days, validation = the 28 days before. Exact day indices: TBD after data inspection (T-09).
+| Part | Days | Dates |
+|---|---|---|
+| Train | d_1 to d_1885 | 2011-01-29 to 2016-03-27 |
+| Validation | d_1886 to d_1913 | 2016-03-28 to 2016-04-24 |
+| Test | d_1914 to d_1941 | 2016-04-25 to 2016-05-22 |
+
+Approved 2026-11-23 (T-09). Source file: `sales_train_evaluation.csv` (d_1 to d_1941); `sales_train_validation.csv` is an exact prefix of it, so it is not needed.
+
+- Chronological splitting only; no random shuffling.
+- The test period is excluded from model selection, hyperparameter tuning, product selection and feature engineering decisions. It is used once, for the final evaluation.
+- Models are compared and tuned on the validation window. After model selection, retraining on train plus validation is permitted before the final test evaluation; whether we do it is recorded under T-16.
 
 ## Features (M-16, spec s8)
 
@@ -71,7 +152,8 @@ The MVP model does not use `sell_price`, because future weekly prices are not kn
 
 ## Leakage prevention (M-17)
 
-- A feature for date `t` uses only observations available at the forecast origin (data at least 28 days before `t` under D-06).
+- A feature for date `t` uses only information available at the forecast origin (data at least 28 days before `t` under D-06). The forecast origin is the last day before the forecast window: d_1885 for validation, d_1913 for test.
+- Lags, rolling statistics and covariates are checked against the full 28-day horizon: no feature for any of the 28 days may use actual sales from inside the forecast window. Only covariates known in advance (calendar, events, SNAP) are used for future days.
 - Rolling features exclude the target day.
 - Test observations are never used for fitting, feature selection or tuning.
 - Unknown future prices are not assumed.
@@ -85,9 +167,11 @@ The MVP model does not use `sell_price`, because future weekly prices are not kn
 | Ridge Regression | Variant 1 (Proposed) |
 | Random Forest Regressor | Variant 2 (Proposed) |
 
-- Metrics: MAE and RMSE on the same 28-day holdout, overall and per item. Seeds fixed.
+- Evaluation covers the complete 28-day horizon from one forecast origin: all 28 days are predicted without using actual sales from inside the window (no one-day-ahead evaluation with true lags).
+- The Seasonal Naive baseline and at least two ML model variations are compared on MAE and RMSE (D-04).
+- Metrics are reported in aggregate and per product, and also per demand group (high, medium, low), so differences between groups are visible. Seeds fixed.
 - MAPE is avoided because intermittent items contain many zeros.
-- Hyperparameters are tuned on the validation window only. Whether the final model is refit on train plus validation before the test forecast: TBD (T-16), must be documented either way.
+- Hyperparameters are tuned on the validation window only. Refitting on train plus validation before the test forecast is permitted (T-09); whether we do it: T-16, documented either way.
 - Outputs: `features.csv`, `model.joblib`, `evaluation_report.md`, `model_card.md` (M-04, M-06).
 
 ## Model card content (M-06)

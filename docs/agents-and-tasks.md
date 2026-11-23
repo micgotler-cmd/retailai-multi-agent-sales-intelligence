@@ -60,8 +60,38 @@ Runs once, after Gate 2. Does not rerun the Business Analyst. Full design: [rag-
 | Flow | Agent 7 | Forecast summary JSON tied to a `run_id` and read-only access to `insights.md`; no write access to data or models |
 | Agent 7 | Flow | `recommendation.json`; validated by the citation checks before it is stored |
 
-Contract file format: TBD (T-12). Which item(s) get a recommendation: TBD (T-14).
+Contract file format: versioned JSON (T-12, Approved; see [data-and-ml.md](data-and-ml.md)). Which item(s) get a recommendation: TBD (T-14).
 
-## Ownership (spec s15)
+## Ownership (spec s15, T-11 structure Approved)
 
-Developer A leads Crew 1 and the data views. Developer B leads Crew 2 and the forecasting views. Both define the Agent 7 handoff, citation checks and Flow integration. Who is A and who is B: TBD (T-11). Week-by-week plan: [implementation-plan.md](implementation-plan.md).
+Developer A is Lilach, Developer B is Michal (T-11, confirmed 2026-11-18); [progress.md](progress.md) shows roles (Dev A, Dev B, Shared).
+
+| Area | Developer A | Developer B | Shared |
+|---|---|---|---|
+| Data | M5 ingestion and preprocessing, validation and cleaning, EDA, dataset contract | | |
+| Crews | Data Analyst Crew (3 agents) | Data Scientist Crew (3 agents) | |
+| ML | | Feature engineering, model training and evaluation, 28-day product-level forecasting | |
+| UI | Data Streamlit screens (Home, Data Quality, EDA, Insights) | Forecasting screens (Forecast, Model Evaluation) | Run History |
+| Integration | | | CrewAI Flow orchestration and integration, end-to-end testing |
+| Extensions | | | Agent 7, RAG, Supabase |
+| Delivery | | | Final presentation and demo |
+
+## Interfaces between workstreams (Proposed)
+
+To allow parallel work, each handoff has an agreed file format. These are frozen at the end of week 1; changing one needs a PR that updates this table, the producer and the consumer's tests.
+
+| Interface | From | To | Content |
+|---|---|---|---|
+| `clean_data.csv` | A | B, Flow | Columns as in the contract: the spec s5 fields plus `store_closed` (0/1, T-13); one row per `date` x `store_id` x `item_id` from each item's first sale to d_1941, no gaps; sorted by `item_id`, `date`; no future dates; no missing `sell_price` |
+| `dataset_contract.json` | A | B, Flow | See [data-and-ml.md](data-and-ml.md) |
+| `quality_report.json` | A | UI | List of checks with status and message |
+| Test fixture | A | A, B, Flow | Small synthetic M5-shaped dataset under `tests/` (not real M5 rows) |
+| `features.csv` | B | B, Flow | Keys, target and feature columns; list of required features recorded for Gate 2 |
+| `forecast.csv` | B | Flow, UI, Repository | `run_id`, `store_id`, `item_id`, `forecast_date`, `predicted_units`, `model_version` (matches [database-design.md](database-design.md)) |
+| `metrics.json` | B | Flow, UI, Agent 7 | MAE and RMSE overall and per item for the baseline and both models; split boundaries |
+| Forecast summary JSON | Flow | Agent 7 | As in the handoff table above |
+| Repository interface | Shared | All | See [database-design.md](database-design.md) |
+
+## LLM usage
+
+All seven agents use OpenAI models through shared configuration; limits and cost controls are in [architecture.md](architecture.md) (T-01). Week-by-week plan: [implementation-plan.md](implementation-plan.md).

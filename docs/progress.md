@@ -7,45 +7,53 @@ Shared development tracker for RetailAI. Requirements: [project-specification.md
 | Field | Value |
 |---|---|
 | Project name | RetailAI: Multi-Agent Sales Intelligence |
-| Current phase | Phase 0: repository and documentation setup (no application code yet) |
-| Overall status | On track; documentation set created, remote repository pending approval |
-| Last updated | 2026-11-17 |
-| Next milestone | Week 1 exit: clean data and a working baseline ([implementation-plan.md](implementation-plan.md)) |
+| Current phase | Phase 1 (data foundation) complete; phase gate passed 2026-11-23. Next phase: crews and models |
+| Overall status | On track; data pipeline (validation, ETL, cleaning, contract) merged and tested on the real data |
+| Last updated | 2026-11-23 |
+| Next milestone | Week 1 exit: clean data (done) and a working baseline (Dev B, P-07/P-08) ([implementation-plan.md](implementation-plan.md)) |
 
 ## Development Progress
 
-Task status: Not Started, In Progress, Blocked, In Review, Completed. Test status: Not Run, Passed, Failed, Not Applicable. Owners are TBD until Developer A / B are assigned (T-11 in [decisions.md](decisions.md)).
+Task status: Not Started, In Progress, Blocked, In Review, Completed. Test status: Not Run, Passed, Failed, Not Applicable. Owners show the responsibility role (Dev A, Dev B, Shared) from T-11; A is Lilach, B is Michal ([decisions.md](decisions.md), T-11).
 
 | ID | Component | Task | Owner | Status | Branch / PR | Tests | Notes |
 |---|---|---|---|---|---|---|---|
-| P-01 | Setup | Repository and environment setup | TBD | In Progress | `main` (`82aeec9`), `dev` (local, not pushed) | Not Applicable | Repo is live and public; initial docs pushed to `main`. Remaining: push `dev`, branch protection (D-23), Python environment (D-13), collaborator (T-06) |
-| P-02 | Data | M5 dataset ingestion | TBD | Not Started | | Not Run | Needs Kaggle download and usage-rights check (T-04); store and items TBD (T-02, T-03) |
-| P-03 | Data | Data validation and cleaning | TBD | Not Started | | Not Run | Null-price policy TBD (T-13) |
-| P-04 | Crews | Data Analyst Crew | TBD | Not Started | | Not Run | M-01 to M-03 |
-| P-05 | Data | EDA and business insights | TBD | Not Started | | Not Run | M-02 |
-| P-06 | Data | Dataset Contract | TBD | Not Started | | Not Run | Format TBD (T-12), M-24 |
-| P-07 | ML | Feature engineering | TBD | Not Started | | Not Run | Strategy proposed in D-06 |
-| P-08 | ML | Model training and evaluation | TBD | Not Started | | Not Run | Seasonal Naive plus two variants (D-04, D-05) |
-| P-09 | Crews | Data Scientist Crew | TBD | Not Started | | Not Run | M-04 to M-06 |
-| P-10 | Flow | CrewAI Flow orchestration | TBD | Not Started | | Not Run | Gates and states in [architecture.md](architecture.md) |
-| P-11 | RAG | RAG knowledge base | TBD | Not Started | | Not Run | Optional, deferred (D-14, D-16) |
-| P-12 | Agents | Business Recommendation Agent (Agent 7) | TBD | Not Started | | Not Run | Optional, deferred (D-16) |
-| P-13 | App | Streamlit dashboard | TBD | Not Started | | Not Run | D-12 |
-| P-14 | Storage | Supabase integration | TBD | Not Started | | Not Run | Optional, deferred (D-15); LocalRepository comes first (D-08) |
-| P-15 | Testing | Unit and integration testing | TBD | Not Started | | Not Run | [testing-strategy.md](testing-strategy.md) |
-| P-16 | Testing | End-to-end validation | TBD | Not Started | | Not Run | Also a phase gate, see [../CLAUDE.md](../CLAUDE.md) |
-| P-17 | Delivery | Final presentation and demo | TBD | Not Started | | Not Applicable | 10-12 slides and a demo of at most 5 minutes (M-14) |
+| P-01 | Setup | Repository and environment setup | Shared | Completed | `feature/env-setup`, #5 | Not Applicable | Repo, branches and ruleset done. Python 3.12 environment, `pyproject.toml`, `uv.lock` merged; dependency audit run (D-24). Partner runs `uv sync`; `.env` is created later (needs T-01) |
+| P-02 | Data | M5 dataset ingestion | Dev A | Completed | #8, #10 | Passed (unit) | Inspection (`src/data/inspect_m5.py`) and wide-to-long ETL (`src/data/etl.py`) merged. Real data: 38,820 long rows (20 items x 1,941 days) |
+| P-03 | Data | Data validation and cleaning | Dev A | Completed | #9, #11 | Passed (unit) | Validation (Agent 1 logic) and cleaning (Agent 2 logic, T-13) merged. Real data: validation pass; 31,278 clean rows, 0 missing prices |
+| P-04 | Crews | Data Analyst Crew | Dev A | Not Started | | Not Run | M-01 to M-03. Plan: move the reusable checks from `src/data/inspect_m5.py` (files, columns, calendar gaps, duplicates, negative values) into `src/data/validation.py` as the Data Validator tools, so the logic exists once; put the 20 approved item IDs and the T-09 split days in a config file under `config/` for the Data Cleaner and the contract; keep `inspect_m5` as a dev script (rerun to expand to 50 items) that imports the shared checks. The crew never re-selects items at runtime |
+| P-05 | Data | EDA and business insights | Dev A | Not Started | | Not Run | M-02 |
+| P-06 | Data | Dataset Contract | Dev A | Completed | #12 | Passed (unit, e2e) | `src/data/contract.py` writes `dataset_contract.json` (T-12, M-24) and runs the Gate 1 check (9 rules). Real clean data: all rules pass |
+| P-07 | ML | Feature engineering | Dev B | Not Started | | Not Run | Strategy proposed in D-06 |
+| P-08 | ML | Model training and evaluation | Dev B | Not Started | | Not Run | Seasonal Naive plus two variants (D-04, D-05) |
+| P-09 | Crews | Data Scientist Crew | Dev B | Not Started | | Not Run | M-04 to M-06 |
+| P-10 | Flow | CrewAI Flow orchestration | Shared | Not Started | | Not Run | Gates and states in [architecture.md](architecture.md) |
+| P-11 | RAG | RAG knowledge base | Shared | Not Started | | Not Run | Optional, deferred (D-14, D-16) |
+| P-12 | Agents | Business Recommendation Agent (Agent 7) | Shared | Not Started | | Not Run | Optional, deferred (D-16) |
+| P-13 | App | Streamlit dashboard (A: data screens, B: forecasting screens) | Dev A / Dev B | Not Started | | Not Run | D-12 |
+| P-14 | Storage | Supabase integration | Shared | Not Started | | Not Run | Optional, deferred (D-15); LocalRepository comes first (D-08) |
+| P-15 | Testing | Unit and integration testing | Shared | In Progress | #8 to #12 | Passed | 136 unit tests for the data layer on synthetic data; integration tests come with the crews and the Flow. [testing-strategy.md](testing-strategy.md) |
+| P-16 | Testing | End-to-end validation | Shared | In Progress | `feature/phase-gate-data` | Passed | `tests/e2e/test_data_pipeline.py`: validation, ETL, cleaning and contract through the CLIs on synthetic data (also reproducibility and graceful failure on corrupt input) and on the real data when `data/raw/` exists. Extended at each phase gate; the full run with crews and Flow comes later |
+| P-17 | Delivery | Final presentation and demo | Shared | Not Started | | Not Applicable | 10-12 slides and a demo of at most 5 minutes (M-14) |
 
 ## Branches and Pull Requests
 
 | Branch | Base | Purpose | Status | PR |
 |---|---|---|---|---|
-| `main` | n/a | Production, default branch (D-23) | Exists on GitHub, initial commit `82aeec9` | n/a |
-| `dev` | `main` | Integration branch (D-23) | Created locally; not pushed until approved | PR `dev` into `main` will carry the branching-strategy docs |
+| `main` | n/a | Production, default branch (D-23) | Protected by ruleset (PR required) | #1, #4 merged from `dev` |
+| `dev` | `main` | Integration branch (D-23) | Protected by ruleset (PR required) | #2 merged from `main` |
+| `docs/add-simple-plan` | `dev` | Simple-language plan overview (`project-plan-simple.html`) | Merged | #3 |
+| `feature/env-setup` | `dev` | Python 3.12 environment with uv (D-13) | Merged | #5 |
+| `docs/finalize-decisions` | `dev` | Record T-01, T-02, T-03, T-04, T-11, T-12 | Merged | #6 |
+| `docs/t04-kaggle-terms` | `dev` | Record the Kaggle M5 terms check (T-04) | Merged | #7 |
+| `feature/data-inspection` | `dev` | Read-only M5 inspection; T-09 split and T-03 items (P-02) | Merged | #8 |
+| `feature/data-validation` | `dev` | Data Validator logic and `quality_report.json` (P-03) | Merged | #9 |
+| `feature/etl-long` | `dev` | Wide-to-long ETL for the approved items (P-02) | Merged | #10 |
+| `feature/data-cleaning` | `dev` | Cleaning rules (T-13) and `clean_data.csv` (P-03) | Merged | #11 |
+| `feature/dataset-contract` | `dev` | Dataset contract and Gate 1 check (P-06) | Merged | #12 |
+| `feature/phase-gate-data` | `dev` | End-to-end data pipeline test and phase gate record | In review | PR into `dev` |
 
 Add one row per feature branch and its PR (target `dev`) as work starts.
-
-| `docs/add-simple-plan` | `dev` | Add the simple-language plan overview (`project-plan-simple.html`) | In review | PR into `dev`, then `dev` into `main` |
 
 ## Completed Work
 
@@ -53,28 +61,42 @@ Add one row per feature branch and its PR (target `dev`) as work starts.
 |---|---|---|
 | 2026-11-17 | Documentation set created (README, CLAUDE.md, 10 documents under `docs/`) and internal links checked | Initial commit `82aeec9` on `main` (no PR) |
 | 2026-11-17 | Public GitHub repository created and `main` pushed | n/a |
+| 2026-11-17 | `dev` branch created, ruleset for `main` and `dev` enabled, branching strategy documented (D-23) | #1, #2 |
+| 2026-11-18 | Second developer is a collaborator and has cloned the repository | n/a |
+| 2026-11-18 | Simple-language plan overview added to `dev` and `main` | #3, #4 |
+| 2026-11-18 | Planning decisions recorded: T-11 (responsibilities), T-01 (OpenAI provider), T-02 (`CA_1`), T-03 (approach), T-12 (JSON contract); T-04 pending. Documentation only; no development task is complete | #6 |
+| 2026-11-18 | Python 3.12 environment merged (P-01) | #5 |
+| 2026-11-18 | Kaggle M5 terms checked and recorded (T-04): allowed for education, with conditions | #7 |
+| 2026-11-18 | Roles confirmed: Lilach is Developer A, Michal is Developer B (T-11). M5 data downloaded by Lilach | n/a |
+| 2026-11-23 | Split (T-09) and product selection (T-03) approved; 20 `CA_1` items selected by deterministic stratified spread | #8 |
+| 2026-11-23 | Data Validator logic and `quality_report.json` (P-03) | #9 |
+| 2026-11-23 | Wide-to-long ETL for the 20 items; P-02 completed | #10 |
+| 2026-11-23 | Cleaning rules (T-13) and `clean_data.csv`; P-03 completed | #11 |
+| 2026-11-23 | Dataset contract and Gate 1 check; P-06 completed | #12 |
+| 2026-11-23 | **Phase gate passed (data foundation):** e2e test 5/5 including the real data; security review with no findings; `pip-audit` shows only the 5 known `chromadb` advisories (D-24), no new ones | PR pending |
 
 ## Current Blockers
 
 | Blocker | Affects | Needed from |
 |---|---|---|
-| `dev` branch and branch protection not yet on GitHub | P-01 | Owner approval of the remote setup |
-| Open items T-01 to T-19 | Several tasks | Developers, see [decisions.md](decisions.md) |
+| Open items (T-05 to T-08, T-10, T-14 to T-21) | Several tasks | Developers, see [decisions.md](decisions.md) |
 
 ## Next Actions
 
-1. Approve the remote branch setup: push `dev`, enable branch protection (D-23), then merge the branching docs into `main` by PR.
-2. Invite the second developer (T-06) so PR reviews are possible.
-3. Resolve the Week 1 open items: T-01, T-02, T-03, T-04, T-11, T-12.
-4. Set up the Python environment (D-13), then run the read-only M5 dataset inspection (first implementation task, see [implementation-plan.md](implementation-plan.md)).
+1. Michal accepts the Kaggle rules on her own account and downloads the files into `data/raw/` (git-ignored); the files are never shared (T-04 conditions).
+2. Milestone PR `dev` into `main` after this gate PR is merged (D-23). Next phase: EDA and insights (P-05) and Crew 1 (P-04) for Dev A; features and baseline on `clean_data.csv` and the contract (P-07, P-08) for Dev B.
+3. Set a spend limit on the OpenAI project, create local `.env` files with `OPENAI_API_KEY`, then verify the model with one approved call (T-01).
+4. Run the data steps yourself: `uv run python -m src.data.cleaning` (validation, ETL and cleaning; writes `artifacts/clean/`), then `uv run python -m src.data.contract` (writes `dataset_contract.json` and `contract_check.json`). Single steps: `src.data.validation`, `src.data.etl`, `src.data.inspect_m5`. All outputs are git-ignored; `clean_data.csv` and `long_data.csv` are row-level M5 data and are never committed.
+5. Freeze the workstream interfaces in [agents-and-tasks.md](agents-and-tasks.md) at the end of week 1.
 
 ## Decision Log References
 
 | Task | Depends on |
 |---|---|
-| P-02, P-03 | D-02, D-03, T-02, T-03, T-04, T-13 |
-| P-06 | T-12 |
-| P-07, P-08 | D-04 to D-07, T-09, T-16 |
+| P-02, P-03 | D-02, D-03, T-02, T-03, T-04, T-13 (Approved) |
+| P-04 to P-10 | T-01 (OpenAI), T-11 |
+| P-06 | T-12 (Approved) |
+| P-07, P-08 | D-04 to D-07, T-09 (Approved), T-16 |
 | P-11, P-12 | D-14, D-16, T-14 |
 | P-13 | D-12 |
 | P-14 | D-08 to D-11, D-15 |
