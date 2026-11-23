@@ -155,12 +155,12 @@ Claude Code is used only to develop the project. At runtime all seven agents cal
 
 | Setting | Value | Status |
 |---|---|---|
-| Default model (`OPENAI_MODEL`) | `gpt-4.1-mini`: low cost, reliable tool calling and structured outputs, no hidden reasoning tokens, so cost and latency are predictable | Proposed |
+| Default model (`OPENAI_MODEL`) | `gpt-4.1-mini`: low cost, reliable tool calling and structured outputs, no hidden reasoning tokens, so cost and latency are predictable | Verified (T-01) |
 | Fallback (`OPENAI_FALLBACK_MODEL`) | `gpt-4o-mini`: use if the default has compatibility or quality problems | Proposed |
 | Escalation | `gpt-4.1` only for a specific agent whose output quality is not acceptable | Proposed |
 | Not chosen by default | GPT-5 family (`gpt-5-mini`, `gpt-5-nano`): reasoning models, more tokens and variable cost | Proposed |
 
-**Verification status:** all four names appear in the OpenAI model list built into the installed CrewAI (1.15.41). That shows CrewAI knows the names; it does not prove the account can use them, that they support the structured outputs we need, or what they cost today. Those checks need one approved API call and a look at OpenAI's pricing page. Until then the model is Pending.
+**Verification status:** verified 2026-11-23. First real run 2026-11-23 (approved): model check passed (`gpt-4.1-mini`, 15 tokens); Crew 1 run `20261123-175149-8df956` completed in 2.5 minutes with 12 LLM calls and 89,793 provider-reported tokens (about 45% of the 200,000 cap); Agent 3 uses most tokens because the 78 EDA facts are resent with each of its calls. Caps kept at 100 calls and 200,000 tokens per run. A monthly spend limit is set on the OpenAI project (amount kept by the developers).
 
 **Cost controls**
 
@@ -171,7 +171,7 @@ Claude Code is used only to develop the project. At runtime all seven agents cal
 | Retries | At most 2 retries with backoff (`LLM_MAX_RETRIES`); a failed call is logged, never looped |
 | Agent limits | Small maximum iterations per agent; a request timeout (`LLM_TIMEOUT_SECONDS`) and an output token limit (`LLM_MAX_OUTPUT_TOKENS`) |
 | Per-run caps | A call cap and a token cap per Flow run (`LLM_MAX_CALLS_PER_RUN`, `LLM_MAX_TOKENS_PER_RUN`); hitting a cap stops the LLM stage with a clear error (before Gate 2 the run fails; after it, the run completes with warnings). Starting values are guesses and are tuned after the first real run. **Implemented** in `src/utils/llm_budget.py` with CrewAI's `before_llm_call` hook: once a cap is reached the next call is blocked before it reaches OpenAI, and the run fails with the reason in its report. Tokens are the provider-reported counts; the check runs before each call, so the last call can pass the token cap by at most one call. Every LLM call during a run counts (fail safe) |
-| Token monitoring | Token usage per agent and per run is logged and stored in the run manifest |
+| Token monitoring | Token usage per agent and per run is logged and stored in the run manifest. The numbers come from the budget hook (`llm_budget` in `crew1_report.json`); CrewAI's crew-level token_usage is not used, because with one LLM shared by the agents it adds the same usage once per agent (3x in the first run). CrewAI also sends preflight requests to OpenAI's input-token count endpoint before some calls (19 in the first run); they carry the same prompts and are not counted as LLM calls |
 | Spend limit | A monthly budget limit and alert on the OpenAI project; each developer uses their own API key. Amount: pending (T-01) |
 | Tests | Automated tests mock the LLM, so they cost nothing and are repeatable; real-LLM runs happen only at phase gates and for the demo |
 | Telemetry | CrewAI telemetry and tracing are always turned off in code (`CREWAI_DISABLE_TELEMETRY`, `OTEL_SDK_DISABLED`, `CREWAI_TRACING_ENABLED=false`); only OpenAI calls leave the machine. Crew tests use a scripted fake LLM and fail on any non-local network connection |

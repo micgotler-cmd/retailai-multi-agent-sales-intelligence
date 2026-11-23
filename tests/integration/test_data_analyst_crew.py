@@ -111,6 +111,7 @@ def test_full_run_writes_all_crew1_artifacts(setup):
     report = json.loads((run_dir / c1.REPORT_FILE).read_text(encoding="utf-8"))
     assert report["run_id"] == RUN_ID and report["status"] == "completed"
     assert len(report["agent_summaries"]) == 3
+    assert "token_usage" not in report  # CrewAI's crew-level count overcounts a shared LLM
 
 
 def test_each_agent_used_its_tools_once(setup):

@@ -120,7 +120,9 @@ class Crew1Result:
     insights_source: str  # "agent", "template" or "none"
     problems: list[str] = field(default_factory=list)
     artifacts: dict[str, bool] = field(default_factory=dict)
-    token_usage: dict = field(default_factory=dict)
+    # Calls and provider-reported tokens of this run, from the budget hook. CrewAI's own
+    # crew-level token_usage is not used: with one LLM shared by the agents it adds the
+    # same usage once per agent (first real run: 3x the real total).
     llm_budget: dict = field(default_factory=dict)
     agent_summaries: list[str] = field(default_factory=list)
 
@@ -182,7 +184,6 @@ def run_data_analyst_crew(
         with enforce_budget(budget):
             output = build_crew(llm, paths).kickoff()
         result.agent_summaries = [t.raw for t in output.tasks_output]
-        result.token_usage = output.token_usage.model_dump() if output.token_usage else {}
     except Exception as exc:  # the crew must fail cleanly, never crash the caller
         logger.exception("Crew 1 run %s raised an error", run_id)
         result.problems.append(f"Crew error: {type(exc).__name__}: {exc}")

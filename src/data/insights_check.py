@@ -14,6 +14,7 @@ import re
 from src.data.eda import fmt
 
 CITED = re.compile(r"(\S+) \[(F\d{2,})\]")
+HAS_DIGIT = re.compile(r"\d")
 # Names and fixed references that contain digits but are not statistics.
 ALLOWED = re.compile(
     r"\d{4}-\d{2}-\d{2}"  # ISO dates
@@ -50,13 +51,24 @@ def check_insights(text: str, facts: list[dict]) -> list[str]:
     for value, fact_id in cited:
         value = value.strip("(,;:).")
         if fact_id not in shown:
-            problems.append(f"[{fact_id}] is not a fact in eda_summary.json")
-        elif value != shown[fact_id]:
-            problems.append(f"[{fact_id}] must be written as {shown[fact_id]!r}, found {value!r}")
+            problems.append(f"[{fact_id}] does not exist; use only fact ids returned by run_eda")
+        elif value != shown[fact_id] and HAS_DIGIT.search(value):
+            # A number right before a citation must be the fact's exact display value.
+            # A word before a citation ("zero sales [F07]") is a reference: no number is shown.
+            problems.append(
+                f"The number before [{fact_id}] must be exactly {shown[fact_id]!r} "
+                f"(write '{shown[fact_id]} [{fact_id}]'), found {value!r}"
+            )
     rest = CITED.sub("", text)
     rest = "\n".join(ALLOWED.sub("", line) for line in rest.splitlines())
     for match in re.finditer(r"[^\s]*\d[^\s]*", rest):
-        problems.append(f"Number without a fact citation: {match.group(0)!r}")
+        problems.append(
+            f"{match.group(0)!r} is a number without a fact citation: replace it with a fact's "
+            "display value followed by its id, or remove it"
+        )
     if REQUIRED_PHRASE not in text.lower():
-        problems.append(f"State that associations are {REQUIRED_PHRASE} effects")
+        problems.append(
+            f"Add a sentence saying SNAP, event and price findings are associations, "
+            f"{REQUIRED_PHRASE} effects"
+        )
     return problems
