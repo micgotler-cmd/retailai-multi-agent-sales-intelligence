@@ -10,6 +10,7 @@ import pandas as pd
 import pytest
 
 from src.data import inspect_m5 as im
+from src.data import m5_files
 from tests.conftest import N_DAYS, STORE
 
 # Small-fixture thresholds: 200 days of history, so the 365-day default is too strict.
@@ -48,8 +49,8 @@ def test_missing_column_raises():
 
 
 def test_sales_without_day_columns_raises():
-    with pytest.raises(im.InspectionError, match="no day columns"):
-        im.check_columns("sales_evaluation", im.REQUIRED_COLUMNS["sales_evaluation"])
+    with pytest.raises(im.InspectionError, match="day columns"):
+        im.check_columns("sales_evaluation", m5_files.REQUIRED_COLUMNS["sales_evaluation"])
 
 
 def test_unknown_store_raises(m5_raw_dir: Path):
