@@ -82,7 +82,7 @@ To allow parallel work, each handoff has an agreed file format. These are frozen
 
 | Interface | From | To | Content |
 |---|---|---|---|
-| `clean_data.csv` | A | B, Flow | Columns as in the contract; one row per `date` x `store_id` x `item_id`; sorted by `item_id`, `date`; no future dates |
+| `clean_data.csv` | A | B, Flow | Columns as in the contract: the spec s5 fields plus `store_closed` (0/1, T-13); one row per `date` x `store_id` x `item_id` from each item's first sale to d_1941, no gaps; sorted by `item_id`, `date`; no future dates; no missing `sell_price` |
 | `dataset_contract.json` | A | B, Flow | See [data-and-ml.md](data-and-ml.md) |
 | `quality_report.json` | A | UI | List of checks with status and message |
 | Test fixture | A | A, B, Flow | Small synthetic M5-shaped dataset under `tests/` (not real M5 rows) |
