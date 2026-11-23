@@ -74,7 +74,7 @@ flowchart LR
     V --> C[clean_data.csv + dataset_contract.json]
 ```
 
-Normalized fields (spec s5): `date, store_id, item_id, dept_id, cat_id, state_id, units_sold, sell_price, wm_yr_wk, event_name_1, event_type_1`, SNAP indicator. Missing prices are examined and handled per a documented null policy (T-13), never silently imputed. Field validation rules are in the table in [project-specification.md](project-specification.md) (section 5).
+Normalized fields (spec s5): `date, store_id, item_id, dept_id, cat_id, state_id, units_sold, sell_price, wm_yr_wk, event_name_1, event_type_1`, SNAP indicator. Missing prices are examined and handled per the null policy below (T-13), never silently imputed. Field validation rules are in the table in [project-specification.md](project-specification.md) (section 5).
 
 ## Dataset contract (M-24, T-12 Approved)
 
@@ -97,6 +97,19 @@ Validation is **deterministic Python** (plain pandas checks, one function per ru
 ## Forecast target (D-03)
 
 Daily `units_sold` for the next 28 days, per `item_id` x `store_id`.
+
+## Cleaning (T-13, Approved)
+
+Implemented in `src/data/cleaning.py`; `uv run python -m src.data.cleaning` runs validation, ETL and cleaning and writes `clean_data.csv`, `cleaning_log.json` and `quality_report.json` to `artifacts/clean/` (git-ignored; `clean_data.csv` is row-level M5 data and is never committed, T-04).
+
+| Rule | Detail |
+|---|---|
+| Rows before first sale | Dropped. The first sale is the first training day (d_1 to d_1885) with `units_sold > 0`; validation and test data never set it. Each item's series then runs without gaps to d_1941 |
+| Store closures | `store_closed = 1` on 25 December, otherwise 0; `units_sold` stays 0. The validator found the store sold nothing on exactly these days in all five years. A known calendar date, so it is available at forecast time |
+| Missing prices | Never imputed. A missing or non-positive `sell_price` on a kept row fails the cleaning. In `CA_1`, prices start on or before each item's first sale, so after rule 1 no price is missing |
+| Final checks | Unique keys, `units_sold >= 0`, no date gaps per item, sorted by `item_id`, `date` |
+
+Result on the real data: 38,820 long rows become 31,278 clean rows; 7,542 pre-launch rows dropped (17 of 20 items; first sales from 2011-01-29 to 2014-02-09); 85 closure rows flagged; 0 missing prices.
 
 ## Chronological split (M-17)
 
