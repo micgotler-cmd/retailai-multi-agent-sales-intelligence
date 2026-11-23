@@ -94,6 +94,8 @@ Normalized fields (spec s5): `date, store_id, item_id, dept_id, cat_id, state_id
 
 Validation is **deterministic Python** (plain pandas checks, one function per rule, readable error messages) in `src/data/`. No schema-management framework is added. Gate 1 and the Feature Engineer both run it; a failure stops the Flow (M-08, M-19). The exact field list is finalized when the first clean data exists.
 
+**Implementation (P-06):** `src/data/contract.py`. `uv run python -m src.data.contract` reads `artifacts/clean/clean_data.csv` and `cleaning_log.json`, writes `dataset_contract.json` and checks the data against it (`contract_check.json`). Allowed values for store, items, departments, categories and state come from the approved scope, not from the data, so the check is not circular; event types and the week range are taken from the clean data. The `dataset` section records the size and SHA-256 checksum of each raw file used, so the exact data version is known even though each developer downloads separately (T-04). The Gate 1 check runs nine rules: `columns_match`, `field_types`, `no_unexpected_nulls`, `allowed_values`, `value_ranges`, `unique_keys`, `dates_continuous_per_item`, `no_future_dates`, `sorted_by_item_and_date`. The contract holds no data rows.
+
 ## Forecast target (D-03)
 
 Daily `units_sold` for the next 28 days, per `item_id` x `store_id`.

@@ -20,10 +20,10 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 |---|---|---|---|---|---|---|---|
 | P-01 | Setup | Repository and environment setup | Shared | Completed | `feature/env-setup`, #5 | Not Applicable | Repo, branches and ruleset done. Python 3.12 environment, `pyproject.toml`, `uv.lock` merged; dependency audit run (D-24). Partner runs `uv sync`; `.env` is created later (needs T-01) |
 | P-02 | Data | M5 dataset ingestion | Dev A | Completed | #8, #10 | Passed (unit) | Inspection (`src/data/inspect_m5.py`) and wide-to-long ETL (`src/data/etl.py`) merged. Real data: 38,820 long rows (20 items x 1,941 days) |
-| P-03 | Data | Data validation and cleaning | Dev A | In Review | #9, `feature/data-cleaning` | Passed (unit) | Validation (Agent 1 logic) merged in #9. Cleaning (Agent 2 logic) in `src/data/cleaning.py` under the approved T-13 rules; `uv run python -m src.data.cleaning` runs validation, ETL and cleaning and writes `clean_data.csv` and `cleaning_log.json`. Real data: 31,278 clean rows, 7,542 pre-launch rows dropped, 85 closure rows flagged, 0 missing prices |
+| P-03 | Data | Data validation and cleaning | Dev A | Completed | #9, #11 | Passed (unit) | Validation (Agent 1 logic) and cleaning (Agent 2 logic, T-13) merged. Real data: validation pass; 31,278 clean rows, 0 missing prices |
 | P-04 | Crews | Data Analyst Crew | Dev A | Not Started | | Not Run | M-01 to M-03. Plan: move the reusable checks from `src/data/inspect_m5.py` (files, columns, calendar gaps, duplicates, negative values) into `src/data/validation.py` as the Data Validator tools, so the logic exists once; put the 20 approved item IDs and the T-09 split days in a config file under `config/` for the Data Cleaner and the contract; keep `inspect_m5` as a dev script (rerun to expand to 50 items) that imports the shared checks. The crew never re-selects items at runtime |
 | P-05 | Data | EDA and business insights | Dev A | Not Started | | Not Run | M-02 |
-| P-06 | Data | Dataset Contract | Dev A | Not Started | | Not Run | Versioned JSON, deterministic validation (T-12 Approved), M-24 |
+| P-06 | Data | Dataset Contract | Dev A | In Review | `feature/dataset-contract` | Passed (unit) | `src/data/contract.py` writes `dataset_contract.json` (T-12, M-24) and runs the Gate 1 check (9 rules). Real clean data: all rules pass |
 | P-07 | ML | Feature engineering | Dev B | Not Started | | Not Run | Strategy proposed in D-06 |
 | P-08 | ML | Model training and evaluation | Dev B | Not Started | | Not Run | Seasonal Naive plus two variants (D-04, D-05) |
 | P-09 | Crews | Data Scientist Crew | Dev B | Not Started | | Not Run | M-04 to M-06 |
@@ -49,7 +49,8 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | `feature/data-inspection` | `dev` | Read-only M5 inspection; T-09 split and T-03 items (P-02) | Merged | #8 |
 | `feature/data-validation` | `dev` | Data Validator logic and `quality_report.json` (P-03) | Merged | #9 |
 | `feature/etl-long` | `dev` | Wide-to-long ETL for the approved items (P-02) | Merged | #10 |
-| `feature/data-cleaning` | `dev` | Cleaning rules (T-13) and `clean_data.csv` (P-03) | In review | PR into `dev` |
+| `feature/data-cleaning` | `dev` | Cleaning rules (T-13) and `clean_data.csv` (P-03) | Merged | #11 |
+| `feature/dataset-contract` | `dev` | Dataset contract and Gate 1 check (P-06) | In review | PR into `dev` |
 
 Add one row per feature branch and its PR (target `dev`) as work starts.
 
@@ -77,9 +78,9 @@ Add one row per feature branch and its PR (target `dev`) as work starts.
 ## Next Actions
 
 1. Michal accepts the Kaggle rules on her own account and downloads the files into `data/raw/` (git-ignored); the files are never shared (T-04 conditions).
-2. Next data step: the dataset contract `dataset_contract.json` (P-06, T-12), then EDA and insights (P-05). Michal can start features on `clean_data.csv` (P-07). Model training waits for the contract.
+2. Phase gate for the data foundation (CLAUDE.md): security review and the end-to-end test of the data pipeline (validation, ETL, cleaning, contract). Then EDA and insights (P-05) and Crew 1 (P-04). Michal can build features on `clean_data.csv` and the contract (P-07).
 3. Set a spend limit on the OpenAI project, create local `.env` files with `OPENAI_API_KEY`, then verify the model with one approved call (T-01).
-4. Run the data steps yourself: `uv run python -m src.data.cleaning` (validation, ETL and cleaning; writes `artifacts/clean/`), or one step at a time with `src.data.validation`, `src.data.etl` and `src.data.inspect_m5`. All outputs are git-ignored; `clean_data.csv` and `long_data.csv` are row-level M5 data and are never committed.
+4. Run the data steps yourself: `uv run python -m src.data.cleaning` (validation, ETL and cleaning; writes `artifacts/clean/`), then `uv run python -m src.data.contract` (writes `dataset_contract.json` and `contract_check.json`). Single steps: `src.data.validation`, `src.data.etl`, `src.data.inspect_m5`. All outputs are git-ignored; `clean_data.csv` and `long_data.csv` are row-level M5 data and are never committed.
 5. Freeze the workstream interfaces in [agents-and-tasks.md](agents-and-tasks.md) at the end of week 1.
 
 ## Decision Log References
