@@ -31,6 +31,7 @@ from src.data.etl import KEYS
 from src.data.m5_files import FILES
 from src.data.scope import DEFAULT_SCOPE_PATH, DataScope, ScopeError, load_scope
 from src.data.validation import FAIL, PASS, CheckResult
+from src.utils.logging_setup import setup_from_env
 
 logger = logging.getLogger(__name__)
 
@@ -382,7 +383,7 @@ def write_json(data: dict, path: Path) -> Path:
 
 def main(argv: list[str] | None = None) -> int:
     """Write the contract for the clean data and check the data against it."""
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    setup_from_env()
     parser = argparse.ArgumentParser(description="Write and check the dataset contract.")
     parser.add_argument("--clean-dir", type=Path, default=Path("artifacts/clean"))
     parser.add_argument("--raw-dir", type=Path, default=Path("data/raw"))

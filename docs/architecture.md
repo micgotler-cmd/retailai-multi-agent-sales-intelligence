@@ -110,6 +110,7 @@ retailai-multi-agent-sales-intelligence/
     ml/                      features, models, evaluation, forecast
     rag/                     ingestion, retriever, citation checks
     repositories/            Repository interface, local, supabase
+    tools/                   thin typed CrewAI tool wrappers around src/data and src/ml (T-20)
     utils/                   config, logging, shared helpers
   app/                       Streamlit app
   tests/                     unit/, integration/, e2e/
@@ -118,13 +119,14 @@ retailai-multi-agent-sales-intelligence/
   config/                    non-secret configuration files
 ```
 
-Local-only, git-ignored: `.env`, `.venv/`, a root `data/` folder for downloaded M5 files, vector indexes, logs. Where CrewAI tool wrappers and Supabase SQL migrations live is TBD (T-20); the Python package layout under `src/` (package name, imports) is decided when code starts.
+Local-only, git-ignored: `.env`, `.venv/`, a root `data/` folder for downloaded M5 files, vector indexes, logs. CrewAI tool wrappers live in `src/tools/` (T-20, approved 2026-11-23); where Supabase SQL migrations live is still open. Code is imported as `src.<package>` from the repository root (pytest `pythonpath = ["."]`).
 
 | Directory | Responsibility |
 |---|---|
 | `src/data/` | Load M5 files, reshape to long form, validate, write the contract |
 | `src/ml/` | Features, Seasonal Naive, Ridge, Random Forest, MAE/RMSE, forecasts |
 | `src/crews/`, `src/agents/` | Agent, task and crew definitions only; no business logic |
+| `src/tools/` | Thin typed CrewAI tools: call the tested logic, take file paths, return short JSON summaries (no data rows to the LLM, T-04) |
 | `src/flows/` | State model, gates, orchestration, logging of transitions |
 | `src/rag/` | Document ingestion, retrieval, citation verification |
 | `src/repositories/` | Storage interface and its two implementations |
@@ -172,7 +174,7 @@ Claude Code is used only to develop the project. At runtime all seven agents cal
 | Token monitoring | Token usage per agent and per run is logged and stored in the run manifest |
 | Spend limit | A monthly budget limit and alert on the OpenAI project; each developer uses their own API key. Amount: pending (T-01) |
 | Tests | Automated tests mock the LLM, so they cost nothing and are repeatable; real-LLM runs happen only at phase gates and for the demo |
-| Secrets | Keys live only in a local `.env`; they are never printed, logged or committed |
+| Secrets | Keys live only in a local `.env`; they are never printed, logged or committed. Settings hold the key in a `Secret` that never shows its value. CrewAI `LLM` objects include the API key in their repr, so LLM objects must never be printed or logged; as a safety net, every log line is redacted (`sk-...` patterns and known secret values) by `src/utils/logging_setup.py` |
 
 **Two separate costs:** the Claude Code subscription pays for development help (writing code and docs). The OpenAI API is pay-per-token and is billed to the OpenAI account; only running the pipeline's agents (and optional embeddings for RAG, T-21) uses it. They are billed independently.
 
@@ -180,4 +182,6 @@ Claude Code is used only to develop the project. At runtime all seven agents cal
 
 - Configuration comes from environment variables and a small config module (`src/utils/`, `config/` for non-secret settings; the store id is a setting, T-02); `.env` is never committed, `.env.example` lists the keys (M-21). Backend choice: `REPOSITORY_BACKEND=local|supabase` (default `local`).
 - One `run_id` per Flow run, reused on retry; each run writes to its own artifact folder with a log file and a run manifest (seeds, library versions, split boundaries, dataset version) (M-09, M-20).
+- Run folder: `artifacts/runs/<run_id>/` (approved 2026-11-23); Crew 1 and later the Flow write every artifact of a run there (git-ignored).
+- Implementation: `src/utils/config.py` (`load_settings`, `load_llm_settings`; only `REPOSITORY_BACKEND=local` and `LOG_LEVEL=INFO` have defaults, the OpenAI key, model and every limit must be set), `src/utils/llm.py` (`build_llm`, the only place an LLM is created), `src/utils/logging_setup.py` (redacting log setup used by every command-line entry point).
 - Logging redacts secrets; every state transition and gate result is logged.
