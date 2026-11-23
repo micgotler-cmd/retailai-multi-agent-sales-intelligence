@@ -18,38 +18,33 @@ import argparse
 import json
 import logging
 import os
-import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from src.data.m5_files import (
+    FILES,
+    M5DataError,
+    check_columns,
+    check_files,
+    day_columns,
+    day_number,
+    load_calendar,
+    load_store_prices,
+    load_store_sales,
+    read_columns,
+)
+
 logger = logging.getLogger(__name__)
 
 HORIZON_DAYS = 28  # Forecast horizon, spec s8 (D-03).
 
-FILES = {
-    "calendar": "calendar.csv",
-    "sales_validation": "sales_train_validation.csv",
-    "sales_evaluation": "sales_train_evaluation.csv",
-    "sell_prices": "sell_prices.csv",
-}
-
-REQUIRED_COLUMNS = {
-    "calendar": ["date", "wm_yr_wk", "d"],
-    "sales_validation": ["id", "item_id", "dept_id", "cat_id", "store_id", "state_id"],
-    "sales_evaluation": ["id", "item_id", "dept_id", "cat_id", "store_id", "state_id"],
-    "sell_prices": ["store_id", "item_id", "wm_yr_wk", "sell_price"],
-}
-
-ID_COLUMNS = ["id", "item_id", "dept_id", "cat_id", "store_id", "state_id"]
-DAY_PATTERN = re.compile(r"^d_(\d+)$")
 TIERS = ("high", "medium", "low")
 
-
-class InspectionError(Exception):
-    """Raised when the raw files are missing or do not have the expected shape."""
+# Kept as the inspection's error name; raised by the shared readers too.
+InspectionError = M5DataError
 
 
 @dataclass(frozen=True)
@@ -60,82 +55,6 @@ class SelectionParams:
     min_history_days: int = 365
     max_zero_share: float = 0.8
     min_price_coverage: float = 0.95
-
-
-# ---------------------------------------------------------------- file checks
-
-
-def check_files(raw_dir: Path) -> dict[str, Path]:
-    """Return the path of each required file, or raise if any is missing."""
-    paths = {key: raw_dir / name for key, name in FILES.items()}
-    missing = [str(p) for p in paths.values() if not p.is_file()]
-    if missing:
-        raise InspectionError(
-            "Missing M5 file(s): "
-            + ", ".join(missing)
-            + ". Download them from Kaggle into data/raw/ (see README, Data source)."
-        )
-    return paths
-
-
-def read_columns(path: Path) -> list[str]:
-    """Read only the header row of a CSV file."""
-    return list(pd.read_csv(path, nrows=0).columns)
-
-
-def check_columns(name: str, columns: list[str]) -> None:
-    """Raise if a file lacks a required column (sales files also need d_ columns)."""
-    missing = [c for c in REQUIRED_COLUMNS[name] if c not in columns]
-    if missing:
-        raise InspectionError(f"{FILES[name]} is missing column(s): {', '.join(missing)}")
-    if name.startswith("sales") and not day_columns(columns):
-        raise InspectionError(f"{FILES[name]} has no day columns (d_1, d_2, ...)")
-
-
-def day_columns(columns: list[str]) -> list[str]:
-    """Return the d_<n> columns sorted by day number."""
-    days = [c for c in columns if DAY_PATTERN.match(c)]
-    return sorted(days, key=day_number)
-
-
-def day_number(column: str) -> int:
-    """Convert 'd_123' to 123."""
-    match = DAY_PATTERN.match(column)
-    if match is None:
-        raise InspectionError(f"Not a day column: {column}")
-    return int(match.group(1))
-
-
-# -------------------------------------------------------------------- loading
-
-
-def load_calendar(path: Path) -> pd.DataFrame:
-    """Load the calendar with parsed dates and a numeric day index."""
-    cal = pd.read_csv(path, usecols=REQUIRED_COLUMNS["calendar"], parse_dates=["date"])
-    cal["day"] = cal["d"].map(day_number)
-    return cal.sort_values("day").reset_index(drop=True)
-
-
-def load_store_sales(path: Path, store_id: str, chunksize: int = 5000) -> pd.DataFrame:
-    """Load the wide sales rows of one store, reading the file in chunks."""
-    columns = read_columns(path)
-    dtypes = {c: "int32" for c in day_columns(columns)}
-    parts = [
-        chunk[chunk["store_id"] == store_id]
-        for chunk in pd.read_csv(path, dtype=dtypes, chunksize=chunksize)
-    ]
-    sales = pd.concat(parts, ignore_index=True)
-    if sales.empty:
-        raise InspectionError(f"Store {store_id!r} not found in {path.name}")
-    if sales["item_id"].duplicated().any():
-        raise InspectionError(f"Duplicate item_id rows for store {store_id} in {path.name}")
-    return sales.sort_values("item_id").reset_index(drop=True)
-
-
-def load_store_prices(path: Path, store_id: str) -> pd.DataFrame:
-    """Load the weekly prices of one store."""
-    prices = pd.read_csv(path, usecols=REQUIRED_COLUMNS["sell_prices"])
-    return prices[prices["store_id"] == store_id].reset_index(drop=True)
 
 
 # ---------------------------------------------------------------- summaries
@@ -394,6 +313,8 @@ def inspect(raw_dir: Path, store_id: str, params: SelectionParams) -> tuple[dict
     cal = load_calendar(paths["calendar"])
     evaluation = load_store_sales(paths["sales_evaluation"], store_id)
     validation = load_store_sales(paths["sales_validation"], store_id)
+    if evaluation["item_id"].duplicated().any():
+        raise InspectionError(f"Duplicate item_id rows for store {store_id}")
     prices = load_store_prices(paths["sell_prices"], store_id)
     logger.info("Loaded %d items for store %s", len(evaluation), store_id)
 

@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Approved data scope for RetailAI. Non-secret settings; change only through a PR that updates docs/decisions.md.",
+  "decisions": {
+    "store": "T-02",
+    "items": "T-03",
+    "split": "T-09",
+    "approved": "2026-11-23"
+  },
+  "store_id": "CA_1",
+  "sales_file": "sales_train_evaluation.csv",
+  "horizon_days": 28,
+  "split": {
+    "train": {"first_day": 1, "last_day": 1885},
+    "validation": {"first_day": 1886, "last_day": 1913},
+    "test": {"first_day": 1914, "last_day": 1941}
+  },
+  "items": [
+    {"item_id": "FOODS_3_234", "demand_group": "high"},
+    {"item_id": "FOODS_1_162", "demand_group": "high"},
+    {"item_id": "HOUSEHOLD_1_494", "demand_group": "high"},
+    {"item_id": "FOODS_3_208", "demand_group": "high"},
+    {"item_id": "HOUSEHOLD_1_180", "demand_group": "high"},
+    {"item_id": "FOODS_3_190", "demand_group": "high"},
+    {"item_id": "FOODS_3_433", "demand_group": "high"},
+    {"item_id": "FOODS_2_189", "demand_group": "medium"},
+    {"item_id": "FOODS_3_060", "demand_group": "medium"},
+    {"item_id": "FOODS_2_107", "demand_group": "medium"},
+    {"item_id": "HOUSEHOLD_1_299", "demand_group": "medium"},
+    {"item_id": "FOODS_3_488", "demand_group": "medium"},
+    {"item_id": "HOUSEHOLD_1_091", "demand_group": "medium"},
+    {"item_id": "FOODS_1_015", "demand_group": "medium"},
+    {"item_id": "HOUSEHOLD_2_219", "demand_group": "low"},
+    {"item_id": "FOODS_3_427", "demand_group": "low"},
+    {"item_id": "FOODS_2_007", "demand_group": "low"},
+    {"item_id": "FOODS_2_179", "demand_group": "low"},
+    {"item_id": "HOUSEHOLD_2_003", "demand_group": "low"},
+    {"item_id": "HOBBIES_1_002", "demand_group": "low"}
+  ]
+}

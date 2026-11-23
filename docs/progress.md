@@ -20,7 +20,7 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 |---|---|---|---|---|---|---|---|
 | P-01 | Setup | Repository and environment setup | Shared | Completed | `feature/env-setup`, #5 | Not Applicable | Repo, branches and ruleset done. Python 3.12 environment, `pyproject.toml`, `uv.lock` merged; dependency audit run (D-24). Partner runs `uv sync`; `.env` is created later (needs T-01) |
 | P-02 | Data | M5 dataset ingestion | Dev A | In Progress | `feature/data-inspection` | Passed (unit) | Step 1, read-only inspection (`src/data/inspect_m5.py`) done: files and columns verified, calendar has no gaps, `sales_train_validation` is an exact prefix of `sales_train_evaluation`. Split (T-09) and 20 items (T-03) approved and recorded 2026-11-23. Next: ETL wide-to-long |
-| P-03 | Data | Data validation and cleaning | Dev A | Not Started | | Not Run | Null-price policy TBD (T-13) |
+| P-03 | Data | Data validation and cleaning | Dev A | In Progress | `feature/data-validation` | Passed (unit) | Validation part (Agent 1 logic) done: `src/data/validation.py` runs 11 checks and writes `quality_report.json` (`uv run python -m src.data.validation`); approved scope in `config/data_scope.json`; shared readers in `src/data/m5_files.py`. Real data: status pass; warning: `CA_1` sold nothing on 25 December in all five years (store closed), to handle in cleaning. Cleaning part not started; null-price policy TBD (T-13) |
 | P-04 | Crews | Data Analyst Crew | Dev A | Not Started | | Not Run | M-01 to M-03. Plan: move the reusable checks from `src/data/inspect_m5.py` (files, columns, calendar gaps, duplicates, negative values) into `src/data/validation.py` as the Data Validator tools, so the logic exists once; put the 20 approved item IDs and the T-09 split days in a config file under `config/` for the Data Cleaner and the contract; keep `inspect_m5` as a dev script (rerun to expand to 50 items) that imports the shared checks. The crew never re-selects items at runtime |
 | P-05 | Data | EDA and business insights | Dev A | Not Started | | Not Run | M-02 |
 | P-06 | Data | Dataset Contract | Dev A | Not Started | | Not Run | Versioned JSON, deterministic validation (T-12 Approved), M-24 |
@@ -46,7 +46,8 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | `feature/env-setup` | `dev` | Python 3.12 environment with uv (D-13) | Merged | #5 |
 | `docs/finalize-decisions` | `dev` | Record T-01, T-02, T-03, T-04, T-11, T-12 | Merged | #6 |
 | `docs/t04-kaggle-terms` | `dev` | Record the Kaggle M5 terms check (T-04) | Merged | #7 |
-| `feature/data-inspection` | `dev` | Read-only M5 inspection; T-09 split and T-03 items (P-02) | In review | PR into `dev` |
+| `feature/data-inspection` | `dev` | Read-only M5 inspection; T-09 split and T-03 items (P-02) | Merged | #8 |
+| `feature/data-validation` | `dev` | Data Validator logic and `quality_report.json` (P-03) | In review | PR into `dev` |
 
 Add one row per feature branch and its PR (target `dev`) as work starts.
 
@@ -63,7 +64,7 @@ Add one row per feature branch and its PR (target `dev`) as work starts.
 | 2026-11-18 | Python 3.12 environment merged (P-01) | #5 |
 | 2026-11-18 | Kaggle M5 terms checked and recorded (T-04): allowed for education, with conditions | #7 |
 | 2026-11-18 | Roles confirmed: Lilach is Developer A, Michal is Developer B (T-11). M5 data downloaded by Lilach | n/a |
-| 2026-11-23 | Split (T-09) and product selection (T-03) approved; 20 `CA_1` items selected by deterministic stratified spread | PR pending |
+| 2026-11-23 | Split (T-09) and product selection (T-03) approved; 20 `CA_1` items selected by deterministic stratified spread | #8 |
 
 ## Current Blockers
 
@@ -74,9 +75,9 @@ Add one row per feature branch and its PR (target `dev`) as work starts.
 ## Next Actions
 
 1. Michal accepts the Kaggle rules on her own account and downloads the files into `data/raw/` (git-ignored); the files are never shared (T-04 conditions).
-2. Next data step (P-02): ETL wide-to-long for the 20 approved items, then validation and cleaning (P-03, null-price policy T-13). Model implementation and training wait (P-07, P-08).
+2. Next data step (P-02): ETL wide-to-long for the 20 approved items (Agent 2 logic), then cleaning (P-03: Christmas closures, null-price policy T-13). Model implementation and training wait (P-07, P-08).
 3. Set a spend limit on the OpenAI project, create local `.env` files with `OPENAI_API_KEY`, then verify the model with one approved call (T-01).
-4. Run the inspection yourself with `uv run python -m src.data.inspect_m5 --store-id CA_1`; it writes `artifacts/inspection/` (git-ignored).
+4. Run the checks yourself: `uv run python -m src.data.validation` (writes `artifacts/validation/quality_report.json`) and `uv run python -m src.data.inspect_m5 --store-id CA_1` (writes `artifacts/inspection/`); both folders are git-ignored.
 5. Freeze the workstream interfaces in [agents-and-tasks.md](agents-and-tasks.md) at the end of week 1.
 
 ## Decision Log References
