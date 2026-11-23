@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import numpy as np
@@ -16,22 +17,32 @@ STORE = "CA_1"
 ITEMS = ["FOODS_1_001", "FOODS_1_005", "FOODS_1_009", "HOBBIES_1_001"]
 
 
+def scope_dict(items: list[str] = ITEMS, store: str = STORE, last_day: int = N_DAYS) -> dict:
+    """Scope JSON content for the synthetic fixture: 28-day validation and test at the end."""
+    return {
+        "schema_version": "1.0.0",
+        "store_id": store,
+        "sales_file": "sales_train_evaluation.csv",
+        "horizon_days": 28,
+        "split": {
+            "train": {"first_day": 1, "last_day": last_day - 56},
+            "validation": {"first_day": last_day - 55, "last_day": last_day - 28},
+            "test": {"first_day": last_day - 27, "last_day": last_day},
+        },
+        "items": [{"item_id": i, "demand_group": "high"} for i in items],
+    }
+
+
 def make_scope(items: list[str] = ITEMS, store: str = STORE, last_day: int = N_DAYS) -> DataScope:
-    """A DataScope for the synthetic fixture: 28-day validation and test at the end."""
-    return parse_scope(
-        {
-            "schema_version": "1.0.0",
-            "store_id": store,
-            "sales_file": "sales_train_evaluation.csv",
-            "horizon_days": 28,
-            "split": {
-                "train": {"first_day": 1, "last_day": last_day - 56},
-                "validation": {"first_day": last_day - 55, "last_day": last_day - 28},
-                "test": {"first_day": last_day - 27, "last_day": last_day},
-            },
-            "items": [{"item_id": i, "demand_group": "high"} for i in items],
-        }
-    )
+    """A DataScope for the synthetic fixture."""
+    return parse_scope(scope_dict(items, store, last_day))
+
+
+def write_scope_file(path: Path, items: list[str] = ITEMS) -> Path:
+    """Write a scope file for the synthetic fixture and return its path."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(scope_dict(items)), encoding="utf-8")
+    return path
 
 
 def _item_units(rng: np.random.Generator) -> dict[str, np.ndarray]:
