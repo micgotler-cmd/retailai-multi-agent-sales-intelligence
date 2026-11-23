@@ -22,7 +22,7 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | P-02 | Data | M5 dataset ingestion | Dev A | Completed | #8, #10 | Passed (unit) | Inspection (`src/data/inspect_m5.py`) and wide-to-long ETL (`src/data/etl.py`) merged. Real data: 38,820 long rows (20 items x 1,941 days) |
 | P-03 | Data | Data validation and cleaning | Dev A | Completed | #9, #11 | Passed (unit) | Validation (Agent 1 logic) and cleaning (Agent 2 logic, T-13) merged. Real data: validation pass; 31,278 clean rows, 0 missing prices |
 | P-04 | Crews | Data Analyst Crew | Dev A | Not Started | | Not Run | M-01 to M-03. Plan: move the reusable checks from `src/data/inspect_m5.py` (files, columns, calendar gaps, duplicates, negative values) into `src/data/validation.py` as the Data Validator tools, so the logic exists once; put the 20 approved item IDs and the T-09 split days in a config file under `config/` for the Data Cleaner and the contract; keep `inspect_m5` as a dev script (rerun to expand to 50 items) that imports the shared checks. The crew never re-selects items at runtime |
-| P-05 | Data | EDA and business insights | Dev A | Not Started | | Not Run | M-02 |
+| P-05 | Data | EDA and business insights | Dev A | In Review | `feature/eda-insights` | Passed (unit) | M-02. `src/data/eda.py` (Agent 3 logic): training period only (T-09); 78 numbered facts in `eda_summary.json`, `eda_report.html` with 8 charts and aggregate tables, template `insights.md` citing fact ids. Normalized per-item metrics; SNAP, event and price findings are associations. The CrewAI agent comes in P-04 |
 | P-06 | Data | Dataset Contract | Dev A | Completed | #12 | Passed (unit, e2e) | `src/data/contract.py` writes `dataset_contract.json` (T-12, M-24) and runs the Gate 1 check (9 rules). Real clean data: all rules pass |
 | P-07 | ML | Feature engineering | Dev B | Not Started | | Not Run | Strategy proposed in D-06 |
 | P-08 | ML | Model training and evaluation | Dev B | Not Started | | Not Run | Seasonal Naive plus two variants (D-04, D-05) |
@@ -33,7 +33,7 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | P-13 | App | Streamlit dashboard (A: data screens, B: forecasting screens) | Dev A / Dev B | Not Started | | Not Run | D-12 |
 | P-14 | Storage | Supabase integration | Shared | Not Started | | Not Run | Optional, deferred (D-15); LocalRepository comes first (D-08) |
 | P-15 | Testing | Unit and integration testing | Shared | In Progress | #8 to #12 | Passed | 136 unit tests for the data layer on synthetic data; integration tests come with the crews and the Flow. [testing-strategy.md](testing-strategy.md) |
-| P-16 | Testing | End-to-end validation | Shared | In Progress | `feature/phase-gate-data` | Passed | `tests/e2e/test_data_pipeline.py`: validation, ETL, cleaning and contract through the CLIs on synthetic data (also reproducibility and graceful failure on corrupt input) and on the real data when `data/raw/` exists. Extended at each phase gate; the full run with crews and Flow comes later |
+| P-16 | Testing | End-to-end validation | Shared | In Progress | #13 | Passed | `tests/e2e/test_data_pipeline.py`: validation, ETL, cleaning and contract through the CLIs on synthetic data (also reproducibility and graceful failure on corrupt input) and on the real data when `data/raw/` exists. Extended at each phase gate; the full run with crews and Flow comes later |
 | P-17 | Delivery | Final presentation and demo | Shared | Not Started | | Not Applicable | 10-12 slides and a demo of at most 5 minutes (M-14) |
 
 ## Branches and Pull Requests
@@ -51,7 +51,10 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | `feature/etl-long` | `dev` | Wide-to-long ETL for the approved items (P-02) | Merged | #10 |
 | `feature/data-cleaning` | `dev` | Cleaning rules (T-13) and `clean_data.csv` (P-03) | Merged | #11 |
 | `feature/dataset-contract` | `dev` | Dataset contract and Gate 1 check (P-06) | Merged | #12 |
-| `feature/phase-gate-data` | `dev` | End-to-end data pipeline test and phase gate record | In review | PR into `dev` |
+| `feature/phase-gate-data` | `dev` | End-to-end data pipeline test and phase gate record | Merged | #13 |
+| `dev` (release) | `main` | Data foundation release | Merged | #14 |
+| `main` (sync) | `dev` | Align history after the squash-merged release | Merged | #15 |
+| `feature/eda-insights` | `dev` | EDA and insights, Agent 3 logic (P-05) | In review | PR into `dev` |
 
 Add one row per feature branch and its PR (target `dev`) as work starts.
 
@@ -73,7 +76,8 @@ Add one row per feature branch and its PR (target `dev`) as work starts.
 | 2026-11-23 | Wide-to-long ETL for the 20 items; P-02 completed | #10 |
 | 2026-11-23 | Cleaning rules (T-13) and `clean_data.csv`; P-03 completed | #11 |
 | 2026-11-23 | Dataset contract and Gate 1 check; P-06 completed | #12 |
-| 2026-11-23 | **Phase gate passed (data foundation):** e2e test 5/5 including the real data; security review with no findings; `pip-audit` shows only the 5 known `chromadb` advisories (D-24), no new ones | PR pending |
+| 2026-11-23 | **Phase gate passed (data foundation):** e2e test 5/5 including the real data; security review with no findings; `pip-audit` shows only the 5 known `chromadb` advisories (D-24), no new ones | #13 |
+| 2026-11-23 | Data foundation released to `main`; histories aligned (use merge commits for releases) | #14, #15 |
 
 ## Current Blockers
 
