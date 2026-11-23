@@ -42,6 +42,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from src.data.scope import DEFAULT_SCOPE_PATH, DataScope, ScopeError, load_scope
+from src.utils.logging_setup import setup_from_env
 
 logger = logging.getLogger(__name__)
 logging.getLogger("matplotlib").setLevel(logging.WARNING)  # quiet font/category notices
@@ -939,7 +940,7 @@ def write_outputs(result: EDAResult, out_dir: Path) -> list[Path]:
 
 def main(argv: list[str] | None = None) -> int:
     """Run the EDA on clean_data.csv; exit code 1 on a data or scope error."""
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    setup_from_env()
     parser = argparse.ArgumentParser(description="EDA on the training period of clean_data.csv.")
     parser.add_argument("--clean", type=Path, default=Path("artifacts/clean/clean_data.csv"))
     parser.add_argument("--scope", type=Path, default=DEFAULT_SCOPE_PATH)

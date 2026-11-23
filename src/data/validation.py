@@ -40,6 +40,7 @@ from src.data.m5_files import (
     read_columns,
 )
 from src.data.scope import DEFAULT_SCOPE_PATH, DataScope, ScopeError, load_scope
+from src.utils.logging_setup import setup_from_env
 
 logger = logging.getLogger(__name__)
 
@@ -406,7 +407,7 @@ def write_quality_report(report: dict, path: Path) -> Path:
 
 def main(argv: list[str] | None = None) -> int:
     """Validate the raw files; exit code 0 when no blocking check failed, else 1."""
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    setup_from_env()
     parser = argparse.ArgumentParser(description="Validate the raw M5 files (Agent 1 logic).")
     parser.add_argument("--raw-dir", type=Path, default=Path("data/raw"))
     parser.add_argument("--scope", type=Path, default=DEFAULT_SCOPE_PATH)

@@ -21,8 +21,8 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | P-01 | Setup | Repository and environment setup | Shared | Completed | `feature/env-setup`, #5 | Not Applicable | Repo, branches and ruleset done. Python 3.12 environment, `pyproject.toml`, `uv.lock` merged; dependency audit run (D-24). Partner runs `uv sync`; `.env` is created later (needs T-01) |
 | P-02 | Data | M5 dataset ingestion | Dev A | Completed | #8, #10 | Passed (unit) | Inspection (`src/data/inspect_m5.py`) and wide-to-long ETL (`src/data/etl.py`) merged. Real data: 38,820 long rows (20 items x 1,941 days) |
 | P-03 | Data | Data validation and cleaning | Dev A | Completed | #9, #11 | Passed (unit) | Validation (Agent 1 logic) and cleaning (Agent 2 logic, T-13) merged. Real data: validation pass; 31,278 clean rows, 0 missing prices |
-| P-04 | Crews | Data Analyst Crew | Dev A | Not Started | | Not Run | M-01 to M-03. Plan: move the reusable checks from `src/data/inspect_m5.py` (files, columns, calendar gaps, duplicates, negative values) into `src/data/validation.py` as the Data Validator tools, so the logic exists once; put the 20 approved item IDs and the T-09 split days in a config file under `config/` for the Data Cleaner and the contract; keep `inspect_m5` as a dev script (rerun to expand to 50 items) that imports the shared checks. The crew never re-selects items at runtime |
-| P-05 | Data | EDA and business insights | Dev A | In Review | `feature/eda-insights` | Passed (unit) | M-02. `src/data/eda.py` (Agent 3 logic): training period only (T-09); 78 numbered facts in `eda_summary.json`, `eda_report.html` with 8 charts and aggregate tables, template `insights.md` citing fact ids. Normalized per-item metrics; SNAP, event and price findings are associations. The CrewAI agent comes in P-04 |
+| P-04 | Crews | Data Analyst Crew | Dev A | In Progress | `feature/config-logging` | Passed (unit) | M-01 to M-03. Three steps (approved 2026-11-23): (1) settings, redacting logging and LLM factory in `src/utils/` (in review); (2) tools in `src/tools/` (T-20), agent and crew definitions, insights citation check, fake-LLM tests, outputs to `artifacts/runs/<run_id>/`; (3) first real OpenAI run after the spend limit and local keys are set (T-01, needs approval). The crew never re-selects items at runtime |
+| P-05 | Data | EDA and business insights | Dev A | Completed | #16 | Passed (unit) | M-02. `src/data/eda.py` (Agent 3 logic): training period only (T-09); 78 numbered facts in `eda_summary.json`, `eda_report.html` with 8 charts and aggregate tables, template `insights.md` citing fact ids. Normalized per-item metrics; SNAP, event and price findings are associations. The CrewAI agent comes in P-04 |
 | P-06 | Data | Dataset Contract | Dev A | Completed | #12 | Passed (unit, e2e) | `src/data/contract.py` writes `dataset_contract.json` (T-12, M-24) and runs the Gate 1 check (9 rules). Real clean data: all rules pass |
 | P-07 | ML | Feature engineering | Dev B | Not Started | | Not Run | Strategy proposed in D-06 |
 | P-08 | ML | Model training and evaluation | Dev B | Not Started | | Not Run | Seasonal Naive plus two variants (D-04, D-05) |
@@ -54,7 +54,8 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | `feature/phase-gate-data` | `dev` | End-to-end data pipeline test and phase gate record | Merged | #13 |
 | `dev` (release) | `main` | Data foundation release | Merged | #14 |
 | `main` (sync) | `dev` | Align history after the squash-merged release | Merged | #15 |
-| `feature/eda-insights` | `dev` | EDA and insights, Agent 3 logic (P-05) | In review | PR into `dev` |
+| `feature/eda-insights` | `dev` | EDA and insights, Agent 3 logic (P-05) | Merged | #16 |
+| `feature/config-logging` | `dev` | Settings, redacting logging, LLM factory (P-04 step 1) | In review | PR into `dev` |
 
 Add one row per feature branch and its PR (target `dev`) as work starts.
 
@@ -78,6 +79,7 @@ Add one row per feature branch and its PR (target `dev`) as work starts.
 | 2026-11-23 | Dataset contract and Gate 1 check; P-06 completed | #12 |
 | 2026-11-23 | **Phase gate passed (data foundation):** e2e test 5/5 including the real data; security review with no findings; `pip-audit` shows only the 5 known `chromadb` advisories (D-24), no new ones | #13 |
 | 2026-11-23 | Data foundation released to `main`; histories aligned (use merge commits for releases) | #14, #15 |
+| 2026-11-23 | EDA facts, report and insights (Agent 3 logic); P-05 completed | #16 |
 
 ## Current Blockers
 
