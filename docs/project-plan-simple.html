@@ -267,7 +267,7 @@
     <li>Pick the exact 20 products and the train/validation/test dates (after we look at the data).</li>
   </ul>
   <h3>Next step</h3>
-  <p>We agreed on the dates and products: the models learn from 2011 to March 2016, we compare them on the next 4 weeks, and the last 4 weeks (25 April to 22 May 2016) stay hidden for the final test. We picked 20 products from store CA_1: 7 fast, 7 medium and 6 slow sellers. The logic for the first agent (the Data Validator) is written: it checks the files and found that the store was closed every Christmas Day. Next we turn the data into a clean, long table (one row per product per day).</p>
+  <p>We agreed on the dates and products: the models learn from 2011 to March 2016, we compare them on the next 4 weeks, and the last 4 weeks (25 April to 22 May 2016) stay hidden for the final test. We picked 20 products from store CA_1: 7 fast, 7 medium and 6 slow sellers. The logic for the first agent (the Data Validator) is written: it checks the files and found that the store was closed every Christmas Day. The data is now in a long table, one row per product per day (38,820 rows). Next we clean it: for example, mark the Christmas closures so they are not read as zero demand.</p>
 </section>
 
 <footer>
