@@ -8,7 +8,6 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.data.insights_check import check_insights
 from src.tools import data_tools as dt
 from tests.conftest import ITEMS, write_scope_file
 
@@ -124,49 +123,37 @@ def test_tool_sets_per_agent(paths):
     ]
 
 
-# ----------------------------------------------------------- insights check
+# ------------------------------------------------------- save_insights retries
 
-FACTS = [
-    {"id": "F01", "value": 20, "unit": "items"},
-    {"id": "F02", "value": 2.3123, "unit": "units/item/day"},
-    {"id": "F03", "value": 22.71, "unit": "%"},
-    {"id": "F04", "value": 55030, "unit": "units"},
-    {"id": "F05", "value": "Sunday", "unit": "weekday"},
-]
-GOOD = (
-    "# Insights\n\nStore CA_1 has 20 [F01] items. Sunday [F05] is busiest at 2.31 [F02] "
-    "units per item per day; 55,030 [F04] units in total. SNAP days are 22.7% [F03] higher, "
-    "an association, not causal. FOODS_3_234 is an item; the period ends 2016-03-27 (T-09)."
-)
+BAD = "# Insights\n\nSales will grow 15% next year, not causal."
 
 
-def test_check_insights_accepts_cited_numbers():
-    assert check_insights(GOOD, FACTS) == []
+def test_save_insights_caps_the_problems_shown(paths):
+    run_all(paths)
+    many = BAD + "".join(f"\n- Item {i}0 sold." for i in range(1, 20))
+    out = run(dt.SaveInsightsTool, paths, markdown=many)
+    assert out["problem_count"] > dt.MAX_PROBLEMS_SHOWN
+    assert len(out["problems"]) == dt.MAX_PROBLEMS_SHOWN
+    assert out["more_problems_not_shown"] == out["problem_count"] - dt.MAX_PROBLEMS_SHOWN
+    assert out["attempts_left"] == dt.MAX_SAVE_ATTEMPTS - 1
+    attempts = dt.read_insights_attempts(paths)  # the full list is kept for the report
+    assert len(attempts[0]["problems"]) == out["problem_count"]
 
 
-def test_citation_after_a_word_is_a_reference():
-    """First real run: 'excluded due to zero sales [F07]' shows no number, so it is allowed."""
-    text = GOOD + " Closure days are excluded because of zero sales [F04]."
-    assert check_insights(text, FACTS) == []
+def test_save_insights_stops_after_the_attempt_limit(paths):
+    run_all(paths)
+    for _ in range(dt.MAX_SAVE_ATTEMPTS):
+        assert run(dt.SaveInsightsTool, paths, markdown=BAD)["saved"] is False
+    template = paths.out(dt.INSIGHTS_TEMPLATE).read_text(encoding="utf-8")
+    out = run(dt.SaveInsightsTool, paths, markdown=template)  # valid, but too late
+    assert out["saved"] is False and out["attempts_left"] == 0
+    assert not paths.out(dt.INSIGHTS).exists()
+    assert len(dt.read_insights_attempts(paths)) == dt.MAX_SAVE_ATTEMPTS
 
 
-def test_messages_tell_the_model_how_to_fix():
-    problems = check_insights(GOOD.replace("2.31 [F02]", "2.40 [F02]") + " Up 7%.", FACTS)
-    assert any("write '2.31 [F02]'" in p for p in problems)
-    assert any("'7%.' is a number without a fact citation" in p for p in problems)
-
-
-@pytest.mark.parametrize(
-    ("text", "problem"),
-    [
-        (GOOD.replace("2.31 [F02]", "2.40 [F02]"), "must be exactly '2.31'"),
-        (GOOD.replace("2.31 [F02]", "about 2.3 [F02]"), "must be exactly '2.31'"),
-        (GOOD.replace("[F04]", "[F99]"), "F99"),
-        (GOOD + " Expect 10% growth.", "10%"),
-        (GOOD.replace("not causal", "a clear effect"), "not causal"),
-        ("", "empty"),
-        ("Only 20 [F01] items, not causal.", "cite at least"),
-    ],
-)
-def test_check_insights_rejects(text, problem):
-    assert any(problem in p for p in check_insights(text, FACTS))
+def test_save_insights_records_a_successful_retry(paths):
+    run_all(paths)
+    run(dt.SaveInsightsTool, paths, markdown=BAD)
+    template = paths.out(dt.INSIGHTS_TEMPLATE).read_text(encoding="utf-8")
+    assert run(dt.SaveInsightsTool, paths, markdown=template) == {"saved": True}
+    assert [a["saved"] for a in dt.read_insights_attempts(paths)] == [False, True]

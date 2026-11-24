@@ -11,6 +11,7 @@ checks the outputs deterministically.
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,12 @@ INSIGHTS_TEMPLATE = "insights_template.md"
 INSIGHTS = "insights.md"
 CONTRACT = "dataset_contract.json"
 CONTRACT_CHECK = "contract_check.json"
+INSIGHTS_ATTEMPTS = "insights_attempts.json"
+
+MAX_SAVE_ATTEMPTS = 3  # the first try and two corrections (cost control, T-01)
+MAX_PROBLEMS_SHOWN = 10  # per attempt; the full list stays in insights_attempts.json
+
+logger = logging.getLogger(__name__)
 
 
 class ToolRefused(Exception):
@@ -212,22 +219,73 @@ class SaveInsightsInput(BaseModel):
 
 
 class SaveInsightsTool(_RunTool):
+    """Saves Agent 3's insights if they pass the citation check, with a limited number of tries.
+
+    Every attempt (problems included) is recorded in insights_attempts.json, so the
+    runner can report the retries and the reason for a fallback. The agent sees at
+    most MAX_PROBLEMS_SHOWN problems per attempt, to keep the correction focused.
+    """
+
     name: str = "save_insights"
     description: str = (
         "Save the business insights (Markdown) as insights.md. Every number must be a fact's "
-        "display text followed by its id in brackets, e.g. '2.31 [F39]'; no other numbers. "
-        "Returns 'saved' or the list of problems to fix."
+        "display text, copied exactly (minus sign and % included), cited with its id: either "
+        "right after the number, '2.31 [F39]', or grouped at the end of the clause, "
+        "'... 2.23 units per item per day and 74.2% of units [F09, F11]' (a group may not "
+        f"contain two facts with the same unit). No other numbers. At most "
+        f"{MAX_SAVE_ATTEMPTS} attempts. Returns 'saved' or the problems to fix."
     )
     args_schema: type[BaseModel] = SaveInsightsInput
+    # An identical text sent twice in a row is refused by CrewAI itself (repeated usage)
+    # without running the tool, so it is not a new attempt.
 
     def _run(self, markdown: str, **_: Any) -> str:
         _require(self.paths, EDA_SUMMARY)
+        attempts = read_insights_attempts(self.paths)
+        if len(attempts) >= MAX_SAVE_ATTEMPTS:
+            logger.warning("save_insights refused: %d attempts used", len(attempts))
+            return _json(
+                {
+                    "saved": False,
+                    "attempts_left": 0,
+                    "message": "No attempts left. Do not call save_insights again; give your "
+                    "final answer. The deterministic template insights will be used.",
+                }
+            )
         facts = _read_json(self.paths.out(EDA_SUMMARY))["facts"]
         problems = check_insights(markdown, facts)
-        if problems:
-            return _json({"saved": False, "problems": problems})
-        self.paths.out(INSIGHTS).write_text(markdown.strip() + "\n", encoding="utf-8")
-        return _json({"saved": True})
+        attempts.append({"attempt": len(attempts) + 1, "saved": not problems, "problems": problems})
+        self.paths.out(INSIGHTS_ATTEMPTS).write_text(json.dumps(attempts, indent=2), "utf-8")
+        if not problems:
+            self.paths.out(INSIGHTS).write_text(markdown.strip() + "\n", encoding="utf-8")
+            logger.info("save_insights attempt %d: saved", len(attempts))
+            return _json({"saved": True})
+        left = MAX_SAVE_ATTEMPTS - len(attempts)
+        logger.warning(
+            "save_insights attempt %d rejected: %d problems, first: %s",
+            len(attempts),
+            len(problems),
+            problems[0],
+        )
+        return _json(
+            {
+                "saved": False,
+                "problem_count": len(problems),
+                "problems": problems[:MAX_PROBLEMS_SHOWN],
+                "more_problems_not_shown": max(0, len(problems) - MAX_PROBLEMS_SHOWN),
+                "attempts_left": left,
+                "hint": "Fix these and similar problems in the whole text, then call "
+                "save_insights again with the full Markdown."
+                if left
+                else "No attempts left; give your final answer.",
+            }
+        )
+
+
+def read_insights_attempts(paths: RunPaths) -> list[dict]:
+    """The save_insights attempts of this run ([] before the first one)."""
+    path = paths.out(INSIGHTS_ATTEMPTS)
+    return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
 
 
 def validator_tools(paths: RunPaths) -> list[BaseTool]:
