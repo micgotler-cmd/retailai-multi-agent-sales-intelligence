@@ -29,6 +29,7 @@ from src.data.etl import KEYS, OUTPUT_COLUMNS, build_long_table, write_long_tabl
 from src.data.m5_files import M5DataError
 from src.data.scope import DEFAULT_SCOPE_PATH, DataScope, ScopeError, load_scope
 from src.data.validation import PASS, run_validation, write_quality_report
+from src.utils.logging_setup import setup_from_env
 
 logger = logging.getLogger(__name__)
 
@@ -176,7 +177,7 @@ def write_outputs(df: pd.DataFrame, log: dict, out_dir: Path) -> list[Path]:
 
 def main(argv: list[str] | None = None) -> int:
     """Validate the raw files, run the ETL and clean; exit code 1 on any blocking problem."""
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    setup_from_env()
     parser = argparse.ArgumentParser(description="Validate, reshape and clean the M5 data.")
     parser.add_argument("--raw-dir", type=Path, default=Path("data/raw"))
     parser.add_argument("--scope", type=Path, default=DEFAULT_SCOPE_PATH)

@@ -26,6 +26,10 @@ package = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+filterwarnings = [
+    # deprecations raised inside CrewAI itself, not by project code
+    "ignore::DeprecationWarning:crewai.*",
+]
 
 [tool.ruff]
 line-length = 100

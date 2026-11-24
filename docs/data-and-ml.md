@@ -96,6 +96,21 @@ Validation is **deterministic Python** (plain pandas checks, one function per ru
 
 **Implementation (P-06):** `src/data/contract.py`. `uv run python -m src.data.contract` reads `artifacts/clean/clean_data.csv` and `cleaning_log.json`, writes `dataset_contract.json` and checks the data against it (`contract_check.json`). Allowed values for store, items, departments, categories and state come from the approved scope, not from the data, so the check is not circular; event types and the week range are taken from the clean data. The `dataset` section records the size and SHA-256 checksum of each raw file used, so the exact data version is known even though each developer downloads separately (T-04). The Gate 1 check runs nine rules: `columns_match`, `field_types`, `no_unexpected_nulls`, `allowed_values`, `value_ranges`, `unique_keys`, `dates_continuous_per_item`, `no_future_dates`, `sorted_by_item_and_date`. The contract holds no data rows.
 
+## EDA and insights (P-05)
+
+Implemented in `src/data/eda.py`; `uv run python -m src.data.eda` reads `artifacts/clean/clean_data.csv` and writes `eda_summary.json`, `eda_report.html` and `insights.md` to `artifacts/eda/` (git-ignored).
+
+| Rule | Detail |
+|---|---|
+| Period | Training period only (d_1 to d_1885, T-09); validation and test never influence EDA findings |
+| Normalization | Categories and demand groups are compared by average daily units per item (per item-day), with totals shown separately |
+| Closures | Days with `store_closed = 1` are excluded from pattern averages |
+| Associations | SNAP, event-day and price findings are descriptive associations, not causal effects; price changes are not promotions |
+| Traceability | Every statistic is a numbered fact (F01, F02, ...) with value, unit and definition in `eda_summary.json`; `insights.md` cites fact ids, and a test checks that every number in it matches a fact. Agent 3 (P-04) may rewrite the insights only from these facts |
+| Report | `eda_report.html` is self-contained (8 embedded charts, aggregate tables only, no data rows), so it is safe for the demo (T-04) |
+
+Real data highlights (training period): 1.82 units per item per day overall; high, medium and low demand groups average 3.93, 0.96 and 0.44; Sunday is the busiest weekday; SNAP days show 22.7% higher average units (FOODS 29.0%), an association only.
+
 ## Forecast target (D-03)
 
 Daily `units_sold` for the next 28 days, per `item_id` x `store_id`.

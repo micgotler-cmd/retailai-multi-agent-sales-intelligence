@@ -36,6 +36,7 @@ from src.data.m5_files import (
     load_store_sales,
     read_columns,
 )
+from src.utils.logging_setup import setup_from_env
 
 logger = logging.getLogger(__name__)
 
@@ -376,7 +377,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     """Entry point: inspect, write the report, print a short summary."""
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    setup_from_env()
     args = parse_args(argv)
     params = SelectionParams(
         n_items=args.n_items,
