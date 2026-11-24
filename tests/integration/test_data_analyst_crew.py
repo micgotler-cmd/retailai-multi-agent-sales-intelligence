@@ -239,6 +239,21 @@ def test_llm_error_fails_cleanly(setup):
     assert (run_dir / c1.REPORT_FILE).is_file()
 
 
+def test_report_is_redacted(setup):
+    """Phase gate: an error message that echoes a key must not reach crew1_report.json."""
+    raw, scope, runs, run_dir = setup
+
+    def leaky(_messages):
+        raise RuntimeError("auth failed for sk-test1234567890abcdef and local-secret-42")
+
+    result = c1.run_data_analyst_crew(
+        fake_llm([leaky] * 10), raw, scope, runs, RUN_ID, **CAPS, secrets=["local-secret-42"]
+    )
+    report = (run_dir / c1.REPORT_FILE).read_text(encoding="utf-8")
+    assert result.status == "failed" and "***REDACTED***" in report
+    assert "sk-test1234567890abcdef" not in report and "local-secret-42" not in report
+
+
 def test_run_folder_is_never_reused(setup):
     run(setup, happy_script(setup[3]))
     with pytest.raises(FileExistsError):
