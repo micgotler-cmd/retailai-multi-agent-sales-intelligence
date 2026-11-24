@@ -93,6 +93,7 @@ To allow parallel work, each handoff has an agreed file format. These are frozen
 | `metrics.json` | B | Flow, UI, Agent 7 | MAE and RMSE overall and per item for the baseline and both models; split boundaries |
 | Forecast summary JSON | Flow | Agent 7 | As in the handoff table above |
 | Repository interface | Shared | All | See [database-design.md](database-design.md) |
+| Streamlit app | A (shell), B (forecasting pages) | UI | One app, `app/streamlit_app.py` (P-13). A page is a script in `app/pages/` registered in `PAGES` (B adds a "Forecasting" section). Pages get the run chosen in the sidebar with `app.common.selected_run()` and read its files only through `src/repositories/run_artifacts.py` (read-only, never `clean_data.csv`). Crew 2 outputs go in the same run folder `artifacts/runs/<run_id>/`; their names are added to `run_artifacts.py` with Crew 2. Each page has an `AppTest` smoke test in `tests/app/` (loads with runs and without any run) |
 
 ## LLM usage
 
