@@ -13,7 +13,7 @@ from crewai.llms.base_llm import BaseLLM
 from crewai.tools import BaseTool
 
 MAX_ITER = 4  # LLM steps per agent; each tool call is one step (T-01 cost control)
-ANALYST_MAX_ITER = 7  # EDA, contract, save insights (with one retry) and the final answer
+ANALYST_MAX_ITER = 7  # EDA, contract, up to 3 save_insights attempts and the final answer
 
 NO_INVENTED_NUMBERS = (
     "You never calculate, estimate or change numbers yourself. Every number you report "

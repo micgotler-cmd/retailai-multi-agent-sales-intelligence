@@ -126,22 +126,76 @@ def test_each_agent_used_its_tools_once(setup):
 # --------------------------------------------------------------------- failures
 
 
-def test_invented_numbers_fall_back_to_template(setup):
+def bad(n: int) -> str:
+    """Insights with an invented number. A new text per attempt: CrewAI refuses a tool call
+    that exactly repeats the previous one, without running the tool."""
+    return f"# Insights\n\nSales will grow 1{n}% next year, not causal."
+
+
+def test_invented_numbers_fall_back_to_labeled_template(setup, caplog):
     run_dir = setup[3]
-    bad = "# Insights\n\nSales will grow 15% next year, not causal."
     script = happy_script(run_dir)
     script[6:8] = [
-        action("save_insights", markdown=bad),
-        action("save_insights", markdown=bad),
+        action("save_insights", markdown=bad(1)),
+        action("save_insights", markdown=bad(2)),
         final("I could not save the insights."),
     ]
-    result = run(setup, script)
+    with caplog.at_level("INFO"):
+        result = run(setup, script)
     assert result.status == "completed"
-    assert result.insights_source == "template"
+    assert result.insights_source == "template" and result.insights_attempts == 2
+    assert result.fallback_reason == (
+        "Agent 3 stopped after 2 rejected attempt(s) (2 problems in the last one)"
+    )
     assert any("template insights were used" in p for p in result.problems)
     saved = (run_dir / "insights.md").read_text(encoding="utf-8")
-    assert saved == (run_dir / dt.INSIGHTS_TEMPLATE).read_text(encoding="utf-8")
-    assert "15%" not in saved
+    template = (run_dir / dt.INSIGHTS_TEMPLATE).read_text(encoding="utf-8")
+    assert saved.startswith(c1.FALLBACK_MARKER) and "**Fallback insights.**" in saved
+    assert result.fallback_reason in saved and saved.endswith(template)
+    assert "11%" not in saved and "12%" not in saved
+    report = json.loads((run_dir / c1.REPORT_FILE).read_text(encoding="utf-8"))
+    assert report["insights_source"] == "template"
+    assert report["fallback_reason"] == result.fallback_reason
+    assert report["insights_attempts"] == 2
+    log = caplog.text  # failures, retries, fallback reason and token usage are logged
+    assert "Insights attempt 1 rejected with 2 problems" in log
+    assert "Insights attempt 2 rejected" in log
+    assert "Using template insights" in log and result.fallback_reason in log
+    assert "LLM usage of run test-run: 9 calls, 0 tokens" in log
+
+
+def test_retries_are_limited(setup):
+    run_dir = setup[3]
+    script = happy_script(run_dir)
+    script[6:8] = [
+        action("save_insights", markdown=bad(i)) for i in range(dt.MAX_SAVE_ATTEMPTS)
+    ] + [
+        template_insights(run_dir),  # a valid text after the limit is refused
+        final("No attempts left."),
+    ]
+    result = run(setup, script)
+    assert result.insights_source == "template"
+    assert result.insights_attempts == dt.MAX_SAVE_ATTEMPTS
+    assert result.fallback_reason.startswith(
+        f"the citation check rejected all {dt.MAX_SAVE_ATTEMPTS} attempts"
+    )
+
+
+def test_agent_insights_after_one_correction(setup):
+    run_dir = setup[3]
+    script = happy_script(run_dir)
+    script[6:6] = [action("save_insights", markdown=bad(0))]
+    result = run(setup, script)
+    assert result.insights_source == "agent" and result.insights_attempts == 2
+    assert result.fallback_reason is None and result.problems == []
+    saved = (run_dir / "insights.md").read_text(encoding="utf-8")
+    assert not saved.startswith(c1.FALLBACK_MARKER)
+
+
+def test_budget_stop_is_the_fallback_reason(setup):
+    _, result = run_capped(setup, happy_script(setup[3]), max_calls=6, max_tokens=1_000_000)
+    assert result.insights_source == "template"
+    assert result.fallback_reason.startswith("the run was stopped by the LLM budget")
 
 
 def test_validation_failure_stops_the_pipeline(setup):
