@@ -29,6 +29,7 @@ from src.agents.data_analyst_agents import (
     create_data_validator,
 )
 from src.data.scope import DEFAULT_SCOPE_PATH
+from src.repositories import run_artifacts
 from src.tools import data_tools as dt
 from src.utils.llm import disable_crewai_telemetry
 from src.utils.llm_budget import LLMBudget, enforce_budget
@@ -155,7 +156,7 @@ def check_outputs(paths: dt.RunPaths) -> list[str]:
     return problems
 
 
-FALLBACK_MARKER = "<!-- insights_source: template -->"
+FALLBACK_MARKER = run_artifacts.FALLBACK_MARKER  # the screens strip it and show a label
 
 
 def fallback_reason(attempts: list[dict], budget_stop: str | None, crew_error: bool) -> str:

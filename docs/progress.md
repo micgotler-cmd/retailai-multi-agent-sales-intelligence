@@ -30,7 +30,7 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | P-10 | Flow | CrewAI Flow orchestration | Shared | Not Started | | Not Run | Gates and states in [architecture.md](architecture.md) |
 | P-11 | RAG | RAG knowledge base | Shared | Not Started | | Not Run | Optional, deferred (D-14, D-16) |
 | P-12 | Agents | Business Recommendation Agent (Agent 7) | Shared | Not Started | | Not Run | Optional, deferred (D-16) |
-| P-13 | App | Streamlit dashboard (A: data screens, B: forecasting screens) | Dev A / Dev B | Not Started | | Not Run | D-12 |
+| P-13 | App | Streamlit dashboard (A: data screens, B: forecasting screens) | Dev A / Dev B | In Progress | `feature/run-reader` | Passed (unit, integration) | D-12 approved 2026-11-24. Dev A plan in 4 steps: (1) read-only run reader `src/repositories/run_artifacts.py`, (2) app shell, run picker and Home, (3) Data Quality, (4) EDA and Business Insights. Step 1 in review: lists runs newest first with status, insights source and LLM usage; loads one run's reports, listing missing and unreadable files instead of failing; refuses run ids that could leave the runs folder; never reads `clean_data.csv` (T-04); strips the fallback marker from `insights.md` |
 | P-14 | Storage | Supabase integration | Shared | Not Started | | Not Run | Optional, deferred (D-15); LocalRepository comes first (D-08) |
 | P-15 | Testing | Unit and integration testing | Shared | In Progress | #8 to #12 | Passed | 136 unit tests for the data layer on synthetic data; integration tests come with the crews and the Flow. [testing-strategy.md](testing-strategy.md) |
 | P-16 | Testing | End-to-end validation | Shared | In Progress | #13, `feature/phase-gate-crew1` | Passed | `tests/e2e/test_data_pipeline.py`: validation, ETL, cleaning and contract through the CLIs on synthetic data (also reproducibility and graceful failure on corrupt input) and on the real data when `data/raw/` exists. `tests/e2e/test_crew1.py` (Crew 1 gate): the full crew through its runner with a scripted fake LLM (no API call): all 8 outputs, quality and contract checks pass, the crew's `clean_data.csv` is byte-identical to the pipeline's, no data row appears in any LLM prompt; synthetic and real data. Extended at each phase gate; the full run with both crews and the Flow comes later |
@@ -60,7 +60,8 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | `feature/crew1-run-fixes` | `dev` | Fixes from the first real Crew 1 run; T-01 recorded | Merged | #19 |
 | `feature/insights-check-v2` | `dev` | Insights check: grouped citations, no swaps, causal claims, retry limit, labeled fallback | Merged | #20 |
 | `feature/crew1-negative-wording` | `dev` | Third real run recorded; double-negative check; P-04 completed | Merged | #21 |
-| `feature/phase-gate-crew1` | `dev` | Crew 1 phase gate: security review, e2e test, pip-audit; report redaction fix | In review | PR into `dev` |
+| `feature/phase-gate-crew1` | `dev` | Crew 1 phase gate: security review, e2e test, pip-audit; report redaction fix | Merged | #22 |
+| `feature/run-reader` | `dev` | Read-only run reader for the Streamlit screens (P-13 step 1); D-12 approved | In review | PR into `dev` |
 
 Add one row per feature branch and its PR (target `dev`) as work starts.
 
@@ -88,6 +89,7 @@ Add one row per feature branch and its PR (target `dev`) as work starts.
 | 2026-11-23 | Crew 1 settings, logging, tools, agents, crew and LLM budget (P-04 steps 1 and 2) | #17, #18 |
 | 2026-11-24 | Three real Crew 1 runs; insights check improved; Agent 3's own insights pass; P-04 completed | #19, #20, #21 |
 | 2026-11-24 | **Phase gate passed (Crew 1):** e2e 7/7 including the real data (data pipeline 5, Crew 1 2); full suite 299 passed; security review of the code since the last gate (`06fcf91`): key held in `Secret` and revealed only to the LLM client, all log lines redacted, CrewAI telemetry and tracing off (the three real runs contacted only `api.openai.com`), no key-like strings in any run folder, HTML report escaped, tools bound to the run folder with no path input, no data rows to the LLM, no eval/exec/pickle/subprocess; one low-severity finding fixed: `crew1_report.json` stored error messages and agent answers unredacted, now redacted like the logs (regression test added); `pip-audit`: only the 5 known `chromadb` advisories (D-24), no dependency changes since the last gate | `feature/phase-gate-crew1` |
+| 2026-11-24 | EDA and Crew 1 released to `main`; histories aligned | #23, #24 |
 
 ## Current Blockers
 
