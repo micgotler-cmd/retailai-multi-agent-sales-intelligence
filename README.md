@@ -53,13 +53,15 @@ cd retailai-multi-agent-sales-intelligence
 git checkout dev
 uv python install 3.12     # once
 uv sync                    # creates .venv and installs the locked versions from uv.lock
-uv run pytest              # runs the tests (none exist yet)
+uv run pytest              # runs the tests (no API calls; the LLM is mocked)
 ```
 
 - Run commands inside the environment with `uv run <command>` (or activate `.venv`).
 - Data: see [Data source](#data-source) below. Datasets are never committed.
 - The OpenAI API key goes in a local `.env` (copy `.env.example`; needed once the code calls an LLM). `.env` is never committed.
-- Run commands for the pipeline and the app will be added when that code exists.
+- Data steps only (no LLM): `uv run python -m src.data.cleaning`, then `uv run python -m src.data.contract`.
+- Crew 1, the Data Analyst Crew (calls the OpenAI API, costs tokens; only with the team's approval): `uv run python -m src.crews.data_analyst_crew`. Outputs go to `artifacts/runs/<run_id>/`.
+- The app: `uv run streamlit run app/streamlit_app.py`, then open <http://localhost:8501>. It only reads finished runs; it serves on this computer only and Streamlit usage statistics are off (`.streamlit/config.toml`).
 
 ## Data source
 

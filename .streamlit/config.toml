@@ -1,0 +1,14 @@
+# Streamlit settings for RetailAI (D-12). No secrets here.
+
+[browser]
+# Streamlit sends usage statistics by default; the project turns them off,
+# as it does for CrewAI telemetry. Only OpenAI calls leave the machine.
+gatherUsageStats = false
+
+[server]
+# Serve on this computer only: the screens show results of a licensed dataset (T-04).
+address = "localhost"
+headless = true
+
+[client]
+showErrorDetails = false
