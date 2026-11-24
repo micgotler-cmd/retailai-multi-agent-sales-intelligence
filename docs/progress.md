@@ -7,7 +7,7 @@ Shared development tracker for RetailAI. Requirements: [project-specification.md
 | Field | Value |
 |---|---|
 | Project name | RetailAI: Multi-Agent Sales Intelligence |
-| Current phase | Phase 1 (data foundation) complete; phase gate passed 2026-11-23. Next phase: crews and models |
+| Current phase | Phase 1 (data foundation) gate passed 2026-11-23. Phase 2 (crews and models): Dev A part (Crew 1, P-04, P-05) complete, Crew 1 gate passed 2026-11-24; Dev B part (P-07 to P-09) not started. Next for Dev A: Flow and Gate 1 (P-10, shared) and the data screens (P-13) |
 | Overall status | On track; data pipeline (validation, ETL, cleaning, contract) merged and tested on the real data |
 | Last updated | 2026-11-23 |
 | Next milestone | Week 1 exit: clean data (done) and a working baseline (Dev B, P-07/P-08) ([implementation-plan.md](implementation-plan.md)) |
@@ -33,7 +33,7 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | P-13 | App | Streamlit dashboard (A: data screens, B: forecasting screens) | Dev A / Dev B | Not Started | | Not Run | D-12 |
 | P-14 | Storage | Supabase integration | Shared | Not Started | | Not Run | Optional, deferred (D-15); LocalRepository comes first (D-08) |
 | P-15 | Testing | Unit and integration testing | Shared | In Progress | #8 to #12 | Passed | 136 unit tests for the data layer on synthetic data; integration tests come with the crews and the Flow. [testing-strategy.md](testing-strategy.md) |
-| P-16 | Testing | End-to-end validation | Shared | In Progress | #13 | Passed | `tests/e2e/test_data_pipeline.py`: validation, ETL, cleaning and contract through the CLIs on synthetic data (also reproducibility and graceful failure on corrupt input) and on the real data when `data/raw/` exists. Extended at each phase gate; the full run with crews and Flow comes later |
+| P-16 | Testing | End-to-end validation | Shared | In Progress | #13, `feature/phase-gate-crew1` | Passed | `tests/e2e/test_data_pipeline.py`: validation, ETL, cleaning and contract through the CLIs on synthetic data (also reproducibility and graceful failure on corrupt input) and on the real data when `data/raw/` exists. `tests/e2e/test_crew1.py` (Crew 1 gate): the full crew through its runner with a scripted fake LLM (no API call): all 8 outputs, quality and contract checks pass, the crew's `clean_data.csv` is byte-identical to the pipeline's, no data row appears in any LLM prompt; synthetic and real data. Extended at each phase gate; the full run with both crews and the Flow comes later |
 | P-17 | Delivery | Final presentation and demo | Shared | Not Started | | Not Applicable | 10-12 slides and a demo of at most 5 minutes (M-14) |
 
 ## Branches and Pull Requests
@@ -59,7 +59,8 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | `feature/analyst-crew` | `dev` | Crew 1 tools, agents, crew and runner (P-04 step 2) | Merged | #18 |
 | `feature/crew1-run-fixes` | `dev` | Fixes from the first real Crew 1 run; T-01 recorded | Merged | #19 |
 | `feature/insights-check-v2` | `dev` | Insights check: grouped citations, no swaps, causal claims, retry limit, labeled fallback | Merged | #20 |
-| `feature/crew1-negative-wording` | `dev` | Third real run recorded; double-negative check; P-04 completed | In review | PR into `dev` |
+| `feature/crew1-negative-wording` | `dev` | Third real run recorded; double-negative check; P-04 completed | Merged | #21 |
+| `feature/phase-gate-crew1` | `dev` | Crew 1 phase gate: security review, e2e test, pip-audit; report redaction fix | In review | PR into `dev` |
 
 Add one row per feature branch and its PR (target `dev`) as work starts.
 
@@ -84,6 +85,9 @@ Add one row per feature branch and its PR (target `dev`) as work starts.
 | 2026-11-23 | **Phase gate passed (data foundation):** e2e test 5/5 including the real data; security review with no findings; `pip-audit` shows only the 5 known `chromadb` advisories (D-24), no new ones | #13 |
 | 2026-11-23 | Data foundation released to `main`; histories aligned (use merge commits for releases) | #14, #15 |
 | 2026-11-23 | EDA facts, report and insights (Agent 3 logic); P-05 completed | #16 |
+| 2026-11-23 | Crew 1 settings, logging, tools, agents, crew and LLM budget (P-04 steps 1 and 2) | #17, #18 |
+| 2026-11-24 | Three real Crew 1 runs; insights check improved; Agent 3's own insights pass; P-04 completed | #19, #20, #21 |
+| 2026-11-24 | **Phase gate passed (Crew 1):** e2e 7/7 including the real data (data pipeline 5, Crew 1 2); full suite 299 passed; security review of the code since the last gate (`06fcf91`): key held in `Secret` and revealed only to the LLM client, all log lines redacted, CrewAI telemetry and tracing off (the three real runs contacted only `api.openai.com`), no key-like strings in any run folder, HTML report escaped, tools bound to the run folder with no path input, no data rows to the LLM, no eval/exec/pickle/subprocess; one low-severity finding fixed: `crew1_report.json` stored error messages and agent answers unredacted, now redacted like the logs (regression test added); `pip-audit`: only the 5 known `chromadb` advisories (D-24), no dependency changes since the last gate | `feature/phase-gate-crew1` |
 
 ## Current Blockers
 
@@ -98,7 +102,7 @@ Add one row per feature branch and its PR (target `dev`) as work starts.
 3. Done 2026-11-23: spend limit set, local `.env` created, model verified with one approved call (T-01).
 4. Run the data steps yourself: `uv run python -m src.data.cleaning` (validation, ETL and cleaning; writes `artifacts/clean/`), then `uv run python -m src.data.contract` (writes `dataset_contract.json` and `contract_check.json`). Single steps: `src.data.validation`, `src.data.etl`, `src.data.inspect_m5`. All outputs are git-ignored; `clean_data.csv` and `long_data.csv` are row-level M5 data and are never committed.
 5. Run Crew 1 yourself (calls the OpenAI API; needs a local `.env`; only with the developers' approval): `uv run python -m src.crews.data_analyst_crew`. Outputs and `crew1.log` go to `artifacts/runs/<run_id>/` (git-ignored).
-6. Next for Dev A: the CrewAI Flow with Gate 1 (P-10, shared) and the data Streamlit screens; a phase gate (security review and end-to-end test) before the next phase.
+6. Optional milestone PR `dev` into `main` after the Crew 1 gate PR is merged (D-23, "Create a merge commit"). Next for Dev A: the data Streamlit screens (P-13) and, agreed with Dev B, the CrewAI Flow with Gate 1 (P-10).
 7. Freeze the workstream interfaces in [agents-and-tasks.md](agents-and-tasks.md) at the end of week 1.
 
 ## Decision Log References

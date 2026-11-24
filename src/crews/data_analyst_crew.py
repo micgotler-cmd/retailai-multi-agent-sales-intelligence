@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import logging
 import uuid
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -31,6 +32,7 @@ from src.data.scope import DEFAULT_SCOPE_PATH
 from src.tools import data_tools as dt
 from src.utils.llm import disable_crewai_telemetry
 from src.utils.llm_budget import LLMBudget, enforce_budget
+from src.utils.logging_setup import redact
 
 logger = logging.getLogger(__name__)
 
@@ -224,11 +226,14 @@ def run_data_analyst_crew(
     *,
     max_calls: int,
     max_tokens: int,
+    secrets: Iterable[str] = (),
 ) -> Crew1Result:
     """Run Crew 1 into artifacts/runs/<run_id>/ and verify its outputs.
 
     max_calls and max_tokens are the per-run caps (LLM_MAX_CALLS_PER_RUN,
     LLM_MAX_TOKENS_PER_RUN); they are required, so no run is ever uncapped.
+    crew1_report.json is redacted like the logs (known secrets and anything shaped
+    like an OpenAI key), because it stores error messages and agent answers.
     """
     disable_crewai_telemetry()
     run_id = run_id or new_run_id()
@@ -261,6 +266,8 @@ def run_data_analyst_crew(
     result.artifacts = {n: paths.out(n).is_file() for n in REQUIRED_OUTPUTS}
     blocking = [p for p in result.problems if not p.startswith("Agent insights")]
     result.status = "failed" if blocking else "completed"
+    result.problems = [redact(p, secrets) for p in result.problems]
+    result.agent_summaries = [redact(s, secrets) for s in result.agent_summaries]
     paths.out(REPORT_FILE).write_text(json.dumps(asdict(result), indent=2), encoding="utf-8")
     logger.info("Crew 1 run %s: %s (insights: %s)", run_id, result.status, result.insights_source)
     return result
@@ -304,6 +311,7 @@ def main(argv: list[str] | None = None) -> int:
         run_id,
         max_calls=llm_settings.max_calls_per_run,
         max_tokens=llm_settings.max_tokens_per_run,
+        secrets=secret_values(env),
     )
     return 0 if result.status == "completed" else 1
 
