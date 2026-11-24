@@ -97,7 +97,7 @@ if run is not None:
             for name in ra.CREW1_FILES
         ],
         hide_index=True,
-        use_container_width=True,
+        width="stretch",
     )
 
 st.header("Run the pipeline")
