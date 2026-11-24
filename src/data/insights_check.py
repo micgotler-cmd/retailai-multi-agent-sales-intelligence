@@ -70,6 +70,9 @@ UNIT_WORDS = {
     "years": "year",
 }
 NEXT_WORD = re.compile(r"\s*([A-Za-z][A-Za-z-]*)")
+# A negative value followed by a "lower" word is a double negative ("-14.7% lower" reads
+# as higher); third real run. The sign already says the direction.
+DOWN_WORDS = {"lower", "less", "fewer", "below", "down", "smaller", "decrease", "decline", "drop"}
 
 # Text facts: the words of the same kind written in a clause must match the cited fact.
 WEEKDAYS = "Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday"
@@ -207,6 +210,11 @@ def _check_clause(
             continue
         fact = match[0]
         used.add(fact.id)
+        if value.startswith("-") and word and word.group(1).lower() in DOWN_WORDS:
+            problems.append(
+                f"'{value} {word.group(1)}' is a double negative (it reads as higher); write "
+                f"'a difference of {value} [{fact.id}]' or 'a {value} difference [{fact.id}]'"
+            )
         if word_unit and fact.unit_word and word_unit != fact.unit_word:
             problems.append(
                 f"'{value} {word.group(1)}' cites [{fact.id}], whose unit is {fact.unit!r}; "

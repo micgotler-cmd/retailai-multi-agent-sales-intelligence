@@ -106,6 +106,21 @@ def test_sign_must_be_kept():
     assert any("'14.7%'" in p and "'-14.7%' [F07]" in p and "minus sign" in p for p in found)
 
 
+@pytest.mark.parametrize("word", ["lower", "less", "below", "decline"])
+def test_negative_value_with_a_down_word_is_rejected(word):
+    """Third real run: 'National events ... -14.7% lower than days without events'."""
+    text = GROUPED.replace("-14.7% [F07]", f"-14.7% {word} than other days [F07]")
+    assert has(text, f"'-14.7% {word}' is a double negative")
+
+
+@pytest.mark.parametrize(
+    "wording",
+    ["a difference of -14.7% [F07]", "a -14.7% [F07] difference", "-14.7% [F07] versus other days"],
+)
+def test_negative_value_without_a_down_word_is_accepted(wording):
+    assert problems(GROUPED.replace("-14.7% [F07]", wording)) == []
+
+
 def test_wrong_value_in_a_group_is_rejected():
     text = GROUPED.replace("22.7% more [F02, F03]", "25.0% more [F02, F03]")
     assert has(text, "'25.0%'")
