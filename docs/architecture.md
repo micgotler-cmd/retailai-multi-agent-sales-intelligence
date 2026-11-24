@@ -129,7 +129,7 @@ Local-only, git-ignored: `.env`, `.venv/`, a root `data/` folder for downloaded 
 | `src/tools/` | Thin typed CrewAI tools: call the tested logic, take file paths, return short JSON summaries (no data rows to the LLM, T-04) |
 | `src/flows/` | State model, gates, orchestration, logging of transitions |
 | `src/rag/` | Document ingestion, retrieval, citation verification |
-| `src/repositories/` | Storage interface and its two implementations |
+| `src/repositories/` | Storage interface and its two implementations; `run_artifacts.py` is the read-only reader of `artifacts/runs/<run_id>/` used by the Streamlit pages (lists runs, loads reports and texts, reports missing files, never reads `clean_data.csv`) |
 | `src/utils/`, `config/` | Config loading, logging setup, non-secret settings |
 | `app/` | Streamlit pages; reads artifacts and the Repository |
 | `tests/` | Unit, integration, end-to-end |
@@ -147,7 +147,7 @@ Local-only, git-ignored: `.env`, `.venv/`, a root `data/` folder for downloaded 
 | Business Recommendations (optional) | Recommendation, evidence, limits, abstention status | `recommendation.json` |
 | Run History and Logs | Run status, errors, artifact links | Repository, logs |
 
-The spec lists five core screens; EDA, Model Evaluation and Recommendations are split out here for clarity (Proposed). Pages only read results; only Home starts a run. Streamlit is Proposed (D-12).
+The spec lists five core screens; EDA, Model Evaluation and Recommendations are split out here for clarity (Proposed). Pages only read results; only Home starts a run. Streamlit is approved (D-12); until the Flow exists, Home shows the run command instead of a run button.
 
 ## LLM provider and cost controls (T-01)
 

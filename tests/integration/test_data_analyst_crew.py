@@ -340,3 +340,35 @@ def test_caps_are_required(setup):
     raw, scope, runs, _ = setup
     with pytest.raises(TypeError):
         c1.run_data_analyst_crew(fake_llm([]), raw, scope, runs, RUN_ID)  # no caps given
+
+
+# ------------------------------------------------------- reader for the screens
+
+
+def test_run_reader_reads_a_crew1_run_folder(setup):
+    """The Streamlit reader (P-13) understands what the runner writes."""
+    from src.repositories import run_artifacts as ra
+
+    _, _, runs, run_dir = setup
+    script = happy_script(run_dir)
+    run(setup, script)
+    listed = ra.list_runs(runs)
+    assert [(r.run_id, r.status, r.insights_source) for r in listed] == [
+        (RUN_ID, "completed", "agent")
+    ]
+    loaded = ra.load_run(RUN_ID, runs)
+    assert loaded.missing == [] and loaded.errors == {}
+    assert loaded.json("quality_report.json")["status"] == "pass"
+    text, fallback = loaded.insights()
+    assert fallback is False and text.startswith("# ")
+
+
+def test_run_reader_recognizes_fallback_insights(setup):
+    from src.repositories import run_artifacts as ra
+
+    run_dir = setup[3]
+    script = happy_script(run_dir)
+    script[6:8] = [action("save_insights", markdown=bad(1)), final("Could not save.")]
+    run(setup, script)
+    text, fallback = ra.load_run(RUN_ID, setup[2]).insights()
+    assert fallback is True and text.startswith("> **Fallback insights.**")
