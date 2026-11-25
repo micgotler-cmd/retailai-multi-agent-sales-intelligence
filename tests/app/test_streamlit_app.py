@@ -154,7 +154,7 @@ def test_chosen_run_is_kept_when_changing_page(runs):
     st.navigation (the app itself keeps them), so the page content is checked."""
     at = start()
     at.sidebar.selectbox[0].set_value(OLDER).run()
-    at.switch_page("pages/eda.py")
+    at.switch_page("pages/insights.py")
     at.run()
     assert not at.exception
-    assert any(OLDER in i.value for i in at.info)
+    assert any("Fallback insights" in w.value for w in at.warning)  # OLDER is a fallback run
