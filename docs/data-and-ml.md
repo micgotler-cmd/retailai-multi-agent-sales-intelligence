@@ -113,7 +113,14 @@ Real data highlights (training period): 1.82 units per item per day overall; hig
 
 ## Forecast target (D-03)
 
-Daily `units_sold` for the next 28 days, per `item_id` x `store_id`.
+Daily `units_sold` for the next 28 days, per `item_id` x `store_id`. Two separate forecasts are produced (T-22, Approved 2026-11-26):
+
+| Forecast | Days | Origin | Purpose | File |
+|---|---|---|---|---|
+| Test forecast | d_1914 to d_1941 (2016-04-25 to 2016-05-22) | d_1913 | Final evaluation only; actuals are known | `test_forecast.csv` |
+| Future forecast | d_1942 to d_1969 (2016-05-23 to 2016-06-19) | d_1941 | Streamlit dashboard and Agent 7; no actuals exist | `forecast.csv` |
+
+Evaluation metrics go to `metrics.json`. After the test evaluation, the selected model type is refitted on all history through d_1941 with the same hyperparameters to produce the future forecast (T-16); the test metrics stay unchanged. Calendar features for the future days come from `calendar.csv`, which runs to d_1969, so no new data file is needed. Events in that window are Memorial Day, the NBA Finals start and end, and Ramadan starts; there is no 25 December, so `store_closed` is 0.
 
 ## Cleaning (T-13, Approved)
 
@@ -145,7 +152,19 @@ Approved 2026-11-23 (T-09). Source file: `sales_train_evaluation.csv` (d_1 to d_
 
 - Chronological splitting only; no random shuffling.
 - The test period is excluded from model selection, hyperparameter tuning, product selection and feature engineering decisions. It is used once, for the final evaluation.
-- Models are compared and tuned on the validation window. After model selection, retraining on train plus validation is permitted before the final test evaluation; whether we do it is recorded under T-16.
+- Models are compared and tuned on rolling-origin backtest windows (below), not on the test window. After model selection, the test-forecast model is fitted on train plus validation (d_1 to d_1913), see T-16.
+
+### Rolling-origin backtest (T-23, Approved)
+
+For model comparison and hyperparameter tuning only. Three chronological, non-overlapping windows, each a 28-day forecast from its own origin (the last observed day):
+
+| Window | Origin | Forecast days | Dates | Fit on |
+|---|---|---|---|---|
+| 1 | d_1829 (2016-01-31) | d_1830 to d_1857 | 2016-02-01 to 2016-02-28 | d_1 to d_1829 |
+| 2 | d_1857 (2016-02-28) | d_1858 to d_1885 | 2016-02-29 to 2016-03-27 | d_1 to d_1857 |
+| 3 | d_1885 (2016-03-27) | d_1886 to d_1913 | 2016-03-28 to 2016-04-24 | d_1 to d_1885 |
+
+Window 3 is the validation window of T-09. At every origin, preprocessing, feature generation and fitting use only data up to that origin; nothing from the forecast window or later may influence them. Scores are compared per window and averaged. Windows 1 and 2 lie inside T-09's training period, which is fine for a backtest because each fit stops at its own origin. The test window (d_1914 to d_1941) is never part of the backtest. The window count can grow later; any change to these dates is recorded here and in `decisions.md` before it is used.
 
 ## Features (M-16, spec s8)
 
@@ -155,19 +174,30 @@ Approved 2026-11-23 (T-09). Source file: `sales_train_evaluation.csv` (d_1 to d_
 | Events / SNAP | `event_name_1`, `event_type_1`, SNAP flag | Yes (calendar is known in advance) |
 | Lags | Sales lags | Only lags at least as old as the horizon step |
 | Rolling | Mean/std of past sales, past-only | Only windows ending before the forecast origin |
-| Price | `sell_price` | Not reliably (future prices unknown) |
+| Price | `sell_price` | No. Future prices are unknown (D-07) |
 
-### Multi-step strategy (D-06, Proposed)
+### Multi-step strategy (D-06, Approved)
 
-A 28-day horizon means a 7-day lag is unknown for days 8-28. Recommended approach: **direct forecasting with horizon-safe features.** Use only lags and rolling windows computed from data at least 28 days before each target date (for example lag 28, 35, 42 and rolling statistics shifted by 28), plus calendar and SNAP features. One model per variant, no recursive error accumulation, and every feature is available when the forecast is made. Stretch option: a recursive variant using 7/14-day lags with predicted values fed back (spec allows it); compare only if time permits.
+A 28-day horizon means a 7-day lag is unknown for days 8-28. Approved approach: **direct forecasting with horizon-safe features.** Use only lags and rolling windows computed from data at least 28 days before each target date (for example lag 28, 35, 42 and rolling statistics shifted by 28), plus calendar and SNAP features. One model per variant, no recursive error accumulation, and every feature is available when the forecast is made. A recursive variant (7/14-day lags with predicted values fed back) is not planned.
 
-### Price handling (D-07, Proposed)
+### Price handling and future covariates (D-07, Approved; T-22)
 
-The MVP model does not use `sell_price`, because future weekly prices are not known at forecast time. Price is analyzed descriptively in EDA. If a price variant is added later, it must state its assumption (for example, last known price held constant).
+The MVP model does not use `sell_price`: future weekly prices are not known at the forecast origin, and `sell_prices.csv` ends at the last observed week. Price is analyzed descriptively in EDA. If a price variant is added later, it must hold the last price observed at the origin constant for the whole horizon and state that assumption.
+
+Covariates for any forecast day, test or future, may only be information available at the forecast origin:
+
+| Covariate | Source for forecast days | Allowed |
+|---|---|---|
+| Day of week, month, day of month | Derived from the date | Yes |
+| `event_name_1`, `event_type_1`, SNAP flag for `CA_1` | `calendar.csv` (published in advance, through d_1969) | Yes |
+| `store_closed` | Fixed calendar rule: 25 December | Yes |
+| Lags and rolling statistics | Computed from sales at least 28 days before the target day, so at or before the origin | Yes |
+| `sell_price` | Not available beyond the origin | No (D-07) |
+| Actual sales inside the forecast window | Unknown by definition | Never |
 
 ## Leakage prevention (M-17)
 
-- A feature for date `t` uses only information available at the forecast origin (data at least 28 days before `t` under D-06). The forecast origin is the last day before the forecast window: d_1885 for validation, d_1913 for test.
+- A feature for date `t` uses only information available at the forecast origin (data at least 28 days before `t` under D-06). The forecast origin is the last day before the forecast window: d_1829, d_1857 and d_1885 for the three backtest windows, d_1913 for the test forecast and d_1941 for the future forecast.
 - Lags, rolling statistics and covariates are checked against the full 28-day horizon: no feature for any of the 28 days may use actual sales from inside the forecast window. Only covariates known in advance (calendar, events, SNAP) are used for future days.
 - Rolling features exclude the target day.
 - Test observations are never used for fitting, feature selection or tuning.
@@ -178,16 +208,16 @@ The MVP model does not use `sell_price`, because future weekly prices are not kn
 
 | Model | Role |
 |---|---|
-| Seasonal Naive | Baseline (repeat the value from one season earlier, weekly season of 7 days) |
-| Ridge Regression | Variant 1 (Proposed) |
-| Random Forest Regressor | Variant 2 (Proposed) |
+| Seasonal Naive | Baseline (T-23): the last seven observed daily values before the forecast origin, repeated four times for 28 days |
+| Ridge Regression | Variant 1 (D-05, Approved) |
+| Random Forest Regressor | Variant 2 (D-05, Approved) |
 
-- Evaluation covers the complete 28-day horizon from one forecast origin: all 28 days are predicted without using actual sales from inside the window (no one-day-ahead evaluation with true lags).
+- Evaluation covers the complete 28-day horizon from one forecast origin per window: all 28 days are predicted without using actual sales from inside the window (no one-day-ahead evaluation with true lags). The backtest windows pick models and hyperparameters; the final metrics come from the test window, evaluated once.
 - The Seasonal Naive baseline and at least two ML model variations are compared on MAE and RMSE (D-04).
 - Metrics are reported in aggregate and per product, and also per demand group (high, medium, low), so differences between groups are visible. Seeds fixed.
 - MAPE is avoided because intermittent items contain many zeros.
-- Hyperparameters are tuned on the validation window only. Refitting on train plus validation before the test forecast is permitted (T-09); whether we do it: T-16, documented either way.
-- Outputs: `features.csv`, `model.joblib`, `evaluation_report.md`, `model_card.md` (M-04, M-06).
+- Hyperparameters are tuned on the backtest windows only (T-23). The test-forecast model is fitted on train plus validation, and the future-forecast model on all history through d_1941 with the same hyperparameters (T-16).
+- Outputs: `features.csv`, `model.joblib`, `test_forecast.csv`, `forecast.csv`, `metrics.json`, `evaluation_report.md`, `model_card.md` (M-04, M-06).
 
 ## Model card content (M-06)
 

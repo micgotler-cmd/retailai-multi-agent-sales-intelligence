@@ -31,8 +31,8 @@ flowchart TD
         S1[4. Feature Engineer] --> S2[5. Model Trainer] --> S3[6. Model Evaluator]
     end
 
-    C2 --> ART2[features.csv, model.joblib, evaluation_report.md, model_card.md, forecast]
-    ART2 --> G2{Gate 2: required features present, forecast valid, metrics on holdout}
+    C2 --> ART2[features.csv, model.joblib, evaluation_report.md, model_card.md, metrics.json, test_forecast.csv, forecast.csv]
+    ART2 --> G2{Gate 2: required features present, both forecasts valid, metrics on test holdout}
     G2 -->|fail| FAIL
     G2 --> PERSIST[Persist run and forecast via Repository]
 
@@ -74,7 +74,7 @@ Flow state is a typed (Pydantic) object: `run_id`, `status`, artifact paths, met
 |---|---|---|---|
 | Ingestion | Required files and columns exist, key columns non-null | Stop, readable error, Crew 1 not started | M-19 |
 | Gate 1 | The four Crew 1 artifacts exist; `dataset_contract.json` matches `clean_data.csv` (columns, types, allowed values, ranges) | Stop, Crew 2 not started, logged | M-08, M-10 |
-| Gate 2 | All required features exist before modeling; model and forecast files exist; forecast covers the 28-day horizon for every selected item; metrics come from the chronological holdout | Stop, logged, no recommendation | M-08, M-16 |
+| Gate 2 | All required features exist before modeling; model and forecast files exist; `test_forecast.csv` covers d_1914 to d_1941 and `forecast.csv` covers d_1942 to d_1969 for every selected item; `metrics.json` comes from the test holdout and no test day was used for fitting or tuning (T-22, T-23) | Stop, logged, no recommendation | M-08, M-16 |
 | Agent 7 output check | Schema valid; `forecast_reference` points to this run; every `source_id` exists; quotes are substrings of the source | Status set to `insufficient_evidence` or `unavailable`; forecast kept | O-01 |
 
 Details of the contract and features: [data-and-ml.md](data-and-ml.md). Agent handoff details: [agents-and-tasks.md](agents-and-tasks.md).
@@ -142,7 +142,7 @@ Local-only, git-ignored: `.env`, `.venv/`, a root `data/` folder for downloaded 
 | Data Quality | Quality report, cleaning log, contract | Crew 1 artifacts |
 | Exploratory Data Analysis | Show `eda_report.html` | Crew 1 artifacts |
 | Business Insights | `insights.md`, trends by department/category | Crew 1 artifacts |
-| Sales Forecasting | Pick an item, history plus 28-day forecast | Forecast table |
+| Sales Forecasting | Pick an item, history plus the 28-day future forecast | `forecast.csv` |
 | Model Evaluation | MAE/RMSE per model and per item, model comparison | Evaluation outputs |
 | Business Recommendations (optional) | Recommendation, evidence, limits, abstention status | `recommendation.json` |
 | Run History and Logs | Run status, errors, artifact links | Repository, logs |

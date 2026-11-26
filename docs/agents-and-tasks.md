@@ -37,7 +37,7 @@ Crew 1 ends at Gate 1 (contract matches clean data). Crew 2 must not start if it
 |---|---|---|
 | Validate inputs, build features | Feature Engineer | Contract re-checked against `clean_data.csv`; `features.csv` saved; every required feature exists; no feature uses data that is unavailable at forecast time |
 | Train two variants | Model Trainer | Both variants fit on training data only; `model.joblib` saved; seeds recorded |
-| Evaluate and document | Model Evaluator | Seasonal Naive, Ridge, Random Forest compared on the same 28-day holdout by MAE and RMSE (overall and per item); `evaluation_report.md` and `model_card.md` saved (purpose, training data summary, metrics, limitations, ethical considerations) |
+| Evaluate and document | Model Evaluator | Seasonal Naive, Ridge, Random Forest compared by MAE and RMSE (overall, per item and per demand group) on the rolling-origin backtest and, once, on the 28-day test holdout; `evaluation_report.md` and `model_card.md` saved (purpose, training data summary, metrics, limitations, ethical considerations) |
 
 Crew 2 ends at Gate 2 (forecast valid). Method details: [data-and-ml.md](data-and-ml.md).
 
@@ -89,8 +89,9 @@ To allow parallel work, each handoff has an agreed file format. These are frozen
 | `quality_report.json` | A | UI | List of checks with status and message |
 | Test fixture | A | A, B, Flow | Small synthetic M5-shaped dataset under `tests/` (not real M5 rows) |
 | `features.csv` | B | B, Flow | Keys, target and feature columns; list of required features recorded for Gate 2 |
-| `forecast.csv` | B | Flow, UI, Repository | `run_id`, `store_id`, `item_id`, `forecast_date`, `predicted_units`, `model_version` (matches [database-design.md](database-design.md)) |
-| `metrics.json` | B | Flow, UI, Agent 7 | MAE and RMSE overall and per item for the baseline and both models; split boundaries |
+| `test_forecast.csv` | B | Flow, UI (Model Evaluation) | Forecast for the test window d_1914 to d_1941 from origin d_1913: `run_id`, `store_id`, `item_id`, `forecast_date`, `model`, `predicted_units`. Used only for the final evaluation; local, git-ignored (T-22) |
+| `forecast.csv` | B | Flow, UI, Agent 7, Repository | Future forecast for d_1942 to d_1969 from origin d_1941: `run_id`, `store_id`, `item_id`, `forecast_date`, `predicted_units`, `model_version` (matches [database-design.md](database-design.md)) |
+| `metrics.json` | B | Flow, UI, Agent 7 | MAE and RMSE overall, per item and per demand group for the baseline and both models, from the test holdout; backtest results per window; split boundaries, origins and seeds |
 | Forecast summary JSON | Flow | Agent 7 | As in the handoff table above |
 | Repository interface | Shared | All | See [database-design.md](database-design.md) |
 | Streamlit app | A (shell), B (forecasting pages) | UI | One app, `app/streamlit_app.py` (P-13). A page is a script in `app/pages/` registered in `PAGES` (B adds a "Forecasting" section). Pages get the run chosen in the sidebar with `app.common.selected_run()` and read its files only through `src/repositories/run_artifacts.py` (read-only, never `clean_data.csv`). Crew 2 outputs go in the same run folder `artifacts/runs/<run_id>/`; their names are added to `run_artifacts.py` with Crew 2. Each page has an `AppTest` smoke test in `tests/app/` (loads with runs and without any run) |
