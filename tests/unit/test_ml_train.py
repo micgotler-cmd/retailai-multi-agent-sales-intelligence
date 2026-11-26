@@ -165,6 +165,16 @@ def test_test_metrics_come_from_a_model_fitted_before_the_test_window(result, cl
     )
 
 
+def test_model_version_identifies_the_refitted_model(result, scope):
+    metrics, test_forecast, forecast, bundle = result
+    expected = f"{metrics['selected_model']}-d{scope.last_day}-run-1"
+    assert (forecast["model_version"] == expected).all()
+    assert metrics["refit"]["model_version"] == bundle["model_version"] == expected
+    assert train.model_version("ridge", 1941, "r1") == "ridge-d1941-r1"
+    assert "model_version" not in test_forecast.columns  # the test forecast is not a future one
+    assert (forecast["model"] == metrics["selected_model"]).all()
+
+
 def test_only_the_selected_model_and_baseline_are_scored_on_the_test_window(result):
     metrics = result[0]
     unselected = [v for v in models.VARIANTS if v != metrics["selected_model"]]
@@ -176,8 +186,11 @@ def test_only_the_selected_model_and_baseline_are_scored_on_the_test_window(resu
 def test_forecast_tables_cover_the_right_days_and_hold_no_actuals(result, scope):
     _, test_forecast, forecast, _ = result
     test_window, future = final_test_window(scope), future_window(scope)
-    for table, window in ((test_forecast, test_window), (forecast, future)):
-        assert list(table.columns) == train.FORECAST_COLUMNS
+    for table, window, columns in (
+        (test_forecast, test_window, train.TEST_FORECAST_COLUMNS),
+        (forecast, future, train.FORECAST_COLUMNS),
+    ):
+        assert list(table.columns) == columns
         assert len(table) == window.n_days * len(scope.item_ids)
         assert table["forecast_date"].min() == day_date(window.first_day)
         assert table["forecast_date"].max() == day_date(window.last_day)

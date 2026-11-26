@@ -67,7 +67,34 @@ OUTPUT_FILES = (METRICS_FILE, TEST_FORECAST_FILE, FORECAST_FILE, MODEL_FILE)
 SCHEMA_VERSION = "2.0.0"
 BUNDLE_VERSION = "1.0.0"
 SELECTION_METRIC = "mean overall MAE across the three backtest windows"
-FORECAST_COLUMNS = ["run_id", "store_id", "item_id", "forecast_date", "model", "predicted_units"]
+TEST_FORECAST_COLUMNS = [
+    "run_id",
+    "store_id",
+    "item_id",
+    "forecast_date",
+    "model",
+    "predicted_units",
+]
+# The future forecast also carries model_version (documented interface, database design).
+FORECAST_COLUMNS = [
+    "run_id",
+    "store_id",
+    "item_id",
+    "forecast_date",
+    "model",
+    "predicted_units",
+    "model_version",
+]
+
+
+def model_version(variant: str, fitted_through_day: int, run_id: str) -> str:
+    """Identifies the fitted model behind a future forecast: variant, last training day, run.
+
+    Example: `ridge-d1941-20261126-171500-a1b2c3`. The model is the pipeline stored for that
+    variant in the run's `model.joblib`, refitted on all history up to that day with the
+    hyperparameters recorded in `metrics.json`.
+    """
+    return f"{variant}-d{fitted_through_day}-{run_id}"
 
 
 def run(
@@ -101,10 +128,16 @@ def run(
         scope, run_id, tuning, best, selected, baseline_metrics, test_entry, day_1
     )
     bundle = _bundle(run_id, scope, best, selected, final_fits)
+    version = model_version(selected, scope.last_day, run_id)
+    metrics["refit"]["model_version"] = version
+    bundle["model_version"] = version
+    future_table = _with_labels(future, run_id, selected, TEST_FORECAST_COLUMNS).assign(
+        model_version=version
+    )[FORECAST_COLUMNS]
     return (
         metrics,
-        _with_labels(test_forecast, run_id, selected),
-        _with_labels(future, run_id, selected),
+        _with_labels(test_forecast, run_id, selected, TEST_FORECAST_COLUMNS),
+        future_table,
         bundle,
     )
 
@@ -166,8 +199,10 @@ def _window_entry(day_1: pd.Timestamp, window: ForecastWindow, scores: dict) -> 
     }
 
 
-def _with_labels(forecast: pd.DataFrame, run_id: str, model: str) -> pd.DataFrame:
-    return forecast.assign(run_id=run_id, model=model)[FORECAST_COLUMNS]
+def _with_labels(
+    forecast: pd.DataFrame, run_id: str, model: str, columns: list[str]
+) -> pd.DataFrame:
+    return forecast.assign(run_id=run_id, model=model)[columns]
 
 
 def _grid_description() -> dict:

@@ -26,8 +26,8 @@ and is covered by the business review of the insights.
 from __future__ import annotations
 
 import re
-from collections.abc import Iterator
-from dataclasses import dataclass
+from collections.abc import Callable, Iterator
+from dataclasses import dataclass, field
 
 from src.data.eda import fmt
 
@@ -105,6 +105,42 @@ MIN_CITATIONS = 5
 MAX_CHARS = 20_000
 EXAMPLE = "'2.31 [F39]' or '... 2.23 units per item per day and 74.2% of units [F09, F11]'"
 
+# Free-standing dates, day ids and EDA-specific constants are allowed in the EDA insights. A
+# strict profile (evaluation reports) treats them as numbers that need a citation.
+ALLOWED_STRICT = re.compile(
+    r"\bT-\d+\b|\b[DMOP]-\d+\b|\b[A-Z]+(?:_\d+)+\b|\bM5\b|" + _GROUP + r"|^\s*#+|^\s*\d+[.)](?=\s)"
+)
+
+
+@dataclass(frozen=True)
+class LabelDimension:
+    """A kind of label a numeric fact can carry (model, metric, period, demand group).
+
+    `vocabulary` maps each label value to a pattern matching the words that name it. For a
+    cited fact, the LAST mention of the dimension before the citation, in the same sentence,
+    must be the fact's own value, so a value cannot be attached to another model, metric,
+    period or group. `forbid_when_absent`: a fact without this label (an overall figure) must
+    not follow a mention of it.
+    """
+
+    name: str
+    vocabulary: dict[str, re.Pattern]
+    forbid_when_absent: bool = False
+
+
+@dataclass(frozen=True)
+class Profile:
+    """What a checked text is, and the rules that go with it. The default is the EDA insights."""
+
+    source_tool: str = "run_eda"  # named in the unknown-fact message
+    subject: str = "insights"
+    min_citations: int = MIN_CITATIONS
+    max_chars: int = MAX_CHARS
+    strict_numbers: bool = False  # dates and d_ ids need a citation too
+    dimensions: tuple[LabelDimension, ...] = ()
+    # text -> problems, run on the whole text; the EDA profile requires a non-causal statement
+    text_checks: tuple[Callable[[str], list[str]], ...] = ()
+
 
 @dataclass(frozen=True)
 class Fact:
@@ -113,6 +149,7 @@ class Fact:
     id: str
     display: str
     unit: str
+    labels: dict = field(default_factory=dict)  # dimension name -> value (evaluation facts)
 
     @property
     def numeric(self) -> bool:
@@ -130,13 +167,16 @@ def display_values(facts: list[dict]) -> dict[str, str]:
 
 
 def _facts(facts: list[dict]) -> dict[str, Fact]:
-    return {f["id"]: Fact(f["id"], fmt(f["value"], f["unit"]), f["unit"]) for f in facts}
+    return {
+        f["id"]: Fact(f["id"], fmt(f["value"], f["unit"]), f["unit"], f.get("labels", {}))
+        for f in facts
+    }
 
 
-def _mask(text: str) -> str:
+def _mask(text: str, allowed: re.Pattern = ALLOWED) -> str:
     """The text with allowed names and citations blanked out (same length and positions)."""
     lines = text.split("\n")
-    return "\n".join(ALLOWED.sub(lambda m: " " * len(m.group(0)), line) for line in lines)
+    return "\n".join(allowed.sub(lambda m: " " * len(m.group(0)), line) for line in lines)
 
 
 def _blocks(text: str) -> Iterator[tuple[int, int]]:
@@ -162,13 +202,21 @@ def _same_kind(a: str, b: str, kind: str) -> bool:
 
 
 def _check_clause(
-    raw: str, masked: str, start: int, end: int, ids: list[str], facts: dict[str, Fact]
+    raw: str,
+    masked: str,
+    start: int,
+    end: int,
+    ids: list[str],
+    facts: dict[str, Fact],
+    source_tool: str = "run_eda",
 ) -> list[str]:
     """Problems of the numbers and names written before one citation group."""
     problems = []
     label = "[" + ", ".join(ids) + "]"
     unknown = [i for i in ids if i not in facts]
-    problems += [f"[{i}] does not exist; use only fact ids returned by run_eda" for i in unknown]
+    problems += [
+        f"[{i}] does not exist; use only fact ids returned by {source_tool}" for i in unknown
+    ]
     cited = [facts[i] for i in dict.fromkeys(ids) if i in facts]
     by_unit: dict[str, list[str]] = {}
     for fact in cited:
@@ -252,27 +300,81 @@ def _causal_problems(text: str) -> list[str]:
     return problems
 
 
-def check_insights(text: str, facts: list[dict]) -> list[str]:
-    """Problems with an insights text; [] means every number is a correctly cited fact."""
-    if not text.strip():
-        return ["The insights are empty"]
+EDA_PROFILE = Profile(text_checks=(_causal_problems,))  # the Agent 3 insights (default)
+
+
+def _label_problems(
+    text: str, b_start: int, group_start: int, ids: list[str], facts: dict[str, Fact], p: Profile
+) -> list[str]:
+    """Check that each cited fact's model, metric, period and group are the ones just named."""
     problems = []
-    if len(text) > MAX_CHARS:
-        problems.append(f"The insights are longer than {MAX_CHARS} characters")
+    sentence_start = b_start
+    for m in SENTENCE_END.finditer(text, b_start, group_start):
+        sentence_start = m.end()
+    context = text[sentence_start:group_start]
+    for fact_id in dict.fromkeys(ids):
+        fact = facts.get(fact_id)
+        if fact is None or not fact.labels:
+            continue
+        for dim in p.dimensions:
+            want = fact.labels.get(dim.name)
+            mentions = sorted(
+                (m.start(), value)
+                for value, pattern in dim.vocabulary.items()
+                for m in pattern.finditer(context)
+            )
+            if want is None:
+                if mentions and dim.forbid_when_absent:
+                    problems.append(
+                        f"[{fact_id}] is an overall figure but the sentence names a {dim.name} "
+                        f"({mentions[-1][1]}) before it; split the sentence or cite the "
+                        f"{dim.name} fact"
+                    )
+                continue
+            if not mentions:
+                problems.append(
+                    f"Name the {dim.name} ({want}) in the same sentence, before its value "
+                    f"[{fact_id}]"
+                )
+            elif mentions[-1][1] != want:
+                problems.append(
+                    f"The last {dim.name} named before [{fact_id}] is {mentions[-1][1]}, but the "
+                    f"fact is about {want}; write the {dim.name} right before its value"
+                )
+    return problems
+
+
+def check_text(text: str, facts: list[dict], profile: Profile = EDA_PROFILE) -> list[str]:
+    """Problems with a text; [] means every number is a correctly cited fact."""
+    if not text.strip():
+        return [f"The {profile.subject} are empty"]
+    problems = []
+    if len(text) > profile.max_chars:
+        problems.append(f"The {profile.subject} are longer than {profile.max_chars} characters")
     known = _facts(facts)
-    masked = _mask(text)
+    masked = _mask(text, ALLOWED_STRICT if profile.strict_numbers else ALLOWED)
     n_cited = 0
     for b_start, b_end in _blocks(text):
         pos = b_start
         for group in GROUP.finditer(text, b_start, b_end):
             ids = FACT_ID.findall(group.group(0))
             n_cited += len(ids)
-            problems += _check_clause(text, masked, pos, group.start(), ids, known)
+            problems += _check_clause(
+                text, masked, pos, group.start(), ids, known, profile.source_tool
+            )
+            if profile.dimensions:
+                problems += _label_problems(text, b_start, group.start(), ids, known, profile)
             pos = group.end()
         rest = NUMBER.sub(" ", masked[pos:b_end])  # after the last citation: uncited
         tail = [m.group(0) for m in NUMBER.finditer(masked, pos, b_end)]
         problems += [_uncited(t) for t in tail + re.findall(r"\S*\d\S*", rest)]
-    if n_cited < MIN_CITATIONS:
-        problems.append(f"Only {n_cited} cited facts; cite at least {MIN_CITATIONS}")
-    problems += _causal_problems(text)
+    if n_cited < profile.min_citations:
+        problems.append(f"Only {n_cited} cited facts; cite at least {profile.min_citations}")
+    for check in profile.text_checks:
+        problems += check(text)
     return problems
+
+
+def check_insights(text: str, facts: list[dict]) -> list[str]:
+    """Problems with an insights text; [] means every number is a correctly cited fact."""
+    return check_text(text, facts, EDA_PROFILE)
