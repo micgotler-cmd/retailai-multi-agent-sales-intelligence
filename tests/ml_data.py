@@ -62,3 +62,31 @@ def make_calendar(n_days: int = N_DAYS + 28) -> pd.DataFrame:
             "day": days,
         }
     )
+
+
+_SAMPLE: dict = {}
+
+
+def sample_metrics() -> dict:
+    """A real metrics.json document from a small synthetic run (cached; returns a copy)."""
+    import copy
+    from unittest import mock
+
+    from src.ml import features as ft
+    from src.ml import models, train
+    from tests.conftest import make_scope
+
+    if not _SAMPLE:
+        small = {
+            models.RIDGE: {"alpha": [1.0, 100.0]},
+            models.RANDOM_FOREST: {
+                "n_estimators": [10],
+                "max_depth": [3, 6],
+                "min_samples_leaf": [5],
+            },
+        }
+        scope, clean = make_scope(), with_ids(make_clean())
+        features = ft.build_features(clean, make_calendar(), scope)
+        with mock.patch.object(models, "GRIDS", small):
+            _SAMPLE["metrics"] = train.run(features, clean, scope, "sample-run")[0]
+    return copy.deepcopy(_SAMPLE["metrics"])
