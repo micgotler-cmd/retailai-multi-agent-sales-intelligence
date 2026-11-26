@@ -219,6 +219,8 @@ Covariates for any forecast day, test or future, may only be information availab
 - Hyperparameters are tuned on the backtest windows only (T-23). The test-forecast model is fitted on train plus validation, and the future-forecast model on all history through d_1941 with the same hyperparameters (T-16).
 - Outputs: `features.csv`, `model.joblib`, `test_forecast.csv`, `forecast.csv`, `metrics.json`, `evaluation_report.md`, `model_card.md` (M-04, M-06).
 
+**Baseline implementation (P-08 step 1):** `uv run python -m src.ml.evaluate_baseline` reads `artifacts/clean/clean_data.csv` and the scope, runs the Seasonal Naive baseline on the three backtest windows and once on the test window, and writes `metrics.json` and `test_forecast.csv` (predictions only, no actual sales) to `artifacts/ml/` (git-ignored) or to `--out-dir`, which the Crew 2 runner will set to its run folder. Each origin needs at least seven consecutive calendar days of valid observed sales before or at the origin (a zero-sales day is valid); otherwise the run fails with the item, the origin and the available history, and nothing is padded, imputed, skipped or replaced. A failed run removes earlier outputs, so stale results are never shown as current.
+
 ## Model card content (M-06)
 
 Purpose, training data summary, metrics, limitations (intermittent demand, no inventory data, one store, no causal claims), ethical considerations (forecasts may drive staffing and stock decisions, single-store bias, no personal data).

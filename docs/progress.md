@@ -25,7 +25,7 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | P-05 | Data | EDA and business insights | Dev A | Completed | #16 | Passed (unit) | M-02. `src/data/eda.py` (Agent 3 logic): training period only (T-09); 78 numbered facts in `eda_summary.json`, `eda_report.html` with 8 charts and aggregate tables, template `insights.md` citing fact ids. Normalized per-item metrics; SNAP, event and price findings are associations. The CrewAI agent comes in P-04 |
 | P-06 | Data | Dataset Contract | Dev A | Completed | #12 | Passed (unit, e2e) | `src/data/contract.py` writes `dataset_contract.json` (T-12, M-24) and runs the Gate 1 check (9 rules). Real clean data: all rules pass |
 | P-07 | ML | Feature engineering | Dev B | Not Started | | Not Run | Strategy approved (D-06, D-07, T-22): lags of 28 days or more, calendar, event and SNAP features known in advance, no price. Rolling-origin dates in [data-and-ml.md](data-and-ml.md) (T-23) |
-| P-08 | ML | Model training and evaluation | Dev B | Not Started | | Not Run | Seasonal Naive plus Ridge and Random Forest (D-04, D-05); test and future forecasts, refit policy (T-16, T-22). Two PRs: documentation (`docs/crew2-decisions`), then baseline, MAE and RMSE, `metrics.json` and tests |
+| P-08 | ML | Model training and evaluation | Dev B | In Progress | `feature/baseline-metrics` | Passed (unit) | Step 1 in review: Seasonal Naive baseline (`src/ml/baseline.py`), forecast windows from the scope (`src/ml/windows.py`), MAE and RMSE overall, per item and per demand group (`src/ml/metrics.py`) and the command `uv run python -m src.ml.evaluate_baseline` (writes `metrics.json` and `test_forecast.csv`, predictions only, to `artifacts/ml/` or `--out-dir`; failed runs leave no outputs). Real data: all 20 items have at least 722 consecutive observed days at every origin (T-03 asks for 365), no gaps; backtest overall MAE 1.667857, 1.6125 and 1.607143, mean 1.629167 (RMSE mean 3.15756); test MAE 1.653571, RMSE 2.918537. Zero-sales weeks occur for some items at some origins and are valid, so those forecasts are zero. Next: features (P-07), Ridge and Random Forest, future forecast |
 | P-09 | Crews | Data Scientist Crew | Dev B | Not Started | | Not Run | M-04 to M-06 |
 | P-10 | Flow | CrewAI Flow orchestration | Shared | Not Started | | Not Run | Gates and states in [architecture.md](architecture.md) |
 | P-11 | RAG | RAG knowledge base | Shared | Not Started | | Not Run | Optional, deferred (D-14, D-16) |
@@ -66,7 +66,8 @@ Task status: Not Started, In Progress, Blocked, In Review, Completed. Test statu
 | `feature/data-quality-page` | `dev` | Data Quality page (P-13 step 3) | Merged | #27 |
 | `feature/eda-insights-pages` | `dev` | EDA and Business Insights pages (P-13 step 4) | Merged | #28 |
 | `docs/handover-crew2` | `dev` | Handover note for Dev B (Crew 2); pair-programming switch | Merged | #29 |
-| `docs/crew2-decisions` | `dev` | Record D-05 to D-07, T-16, T-22, T-23 for Crew 2 (documentation only) | In review (Dev A reviews) | PR into `dev` |
+| `docs/crew2-decisions` | `dev` | Record D-05 to D-07, T-16, T-22, T-23 for Crew 2 (documentation only) | Merged | #30 |
+| `feature/baseline-metrics` | `dev` | Seasonal Naive baseline, MAE and RMSE, `metrics.json` and tests (P-08 step 1) | In review (Dev A reviews) | PR into `dev` |
 
 Add one row per feature branch and its PR (target `dev`) as work starts.
 
@@ -97,7 +98,8 @@ Add one row per feature branch and its PR (target `dev`) as work starts.
 | 2026-11-24 | EDA and Crew 1 released to `main`; histories aligned | #23, #24 |
 | 2026-11-25 | Dev A's data screens (P-13 steps 1 to 4) | #25 to #28 |
 | 2026-11-26 | Handover to Dev B for Crew 2; pair programming | #29 |
-| 2026-11-26 | Crew 2 decisions drafted for review: D-05, D-06, D-07, T-16 (refit policy), T-22 (test and future forecasts), T-23 (Seasonal Naive definition, three rolling-origin windows). Documentation only; no code | PR pending |
+| 2026-11-26 | Crew 2 decisions recorded: D-05, D-06, D-07, T-16 (refit policy), T-22 (test and future forecasts), T-23 (Seasonal Naive definition, three rolling-origin windows). Documentation only; no code | #30 |
+| 2026-11-26 | Seasonal Naive baseline, forecast windows, MAE and RMSE and `metrics.json` on the real data; 404 tests pass; ruff clean (P-08 step 1) | PR pending |
 
 ## Handover to Dev B: Crew 2 (2026-11-26)
 
@@ -108,7 +110,7 @@ We work in pair programming, one task at a time: one developer drives (with thei
 **First steps for Dev B:**
 1. Accept the Kaggle rules with your own account and download the M5 files into `data/raw/` (T-04: each developer uses their own copy; never shared or committed).
 2. Build the clean data locally: `uv run python -m src.data.cleaning`, then `uv run python -m src.data.contract` (outputs in `artifacts/clean/`, git-ignored). Expected: 31,278 rows, contract check `pass`. Or use the outputs of a Crew 1 run in `artifacts/runs/<run_id>/`.
-3. (Drafted 2026-11-26 in `docs/crew2-decisions`, pending Dev A's review.) Confirm the open model decisions with Dev A and record them in [decisions.md](decisions.md) before training: **D-05** (Ridge and Random Forest), **D-06** (direct forecast with lags of 28 days or more, plus known calendar and SNAP features), **D-07** (`sell_price` not a model feature), **T-16** (refit on train plus validation before the test forecast, or not; document either way). **D-04** (Seasonal Naive baseline plus two variations, MAE and RMSE) is approved.
+3. (Done 2026-11-26, #30.) Confirm the open model decisions with Dev A and record them in [decisions.md](decisions.md) before training: **D-05** (Ridge and Random Forest), **D-06** (direct forecast with lags of 28 days or more, plus known calendar and SNAP features), **D-07** (`sell_price` not a model feature), **T-16** (refit on train plus validation before the test forecast, or not; document either way). **D-04** (Seasonal Naive baseline plus two variations, MAE and RMSE) is approved.
 
 **Inputs (from Crew 1):** `clean_data.csv` and `dataset_contract.json` ([agents-and-tasks.md](agents-and-tasks.md) interfaces; field list in [data-and-ml.md](data-and-ml.md)). Gate 1 is `contract_check.json` with status `pass` (`src/data/contract.py`, `check_against_contract`). The approved split is in `config/data_scope.json`: train d_1 to d_1885, validation d_1886 to d_1913, test d_1914 to d_1941 (T-09); the test period is never used for training or tuning. The 28-day horizon is `horizon_days`.
 
@@ -134,7 +136,7 @@ We work in pair programming, one task at a time: one developer drives (with thei
 
 ## Next Actions
 
-1. Dev B drives Crew 2 (P-07 to P-09): see [Handover to Dev B](#handover-to-dev-b-crew-2-2026-11-26) above; the data download and clean data are done on Dev B's machine; the model decisions are drafted in the documentation PR `docs/crew2-decisions`. After Dev A's review, next is the baseline PR (Seasonal Naive, MAE and RMSE, `metrics.json`, unit tests).
+1. Dev B drives Crew 2 (P-07 to P-09): see [Handover to Dev B](#handover-to-dev-b-crew-2-2026-11-26) above; the data download and clean data are done on Dev B's machine; the model decisions are recorded (#30). The baseline PR (`feature/baseline-metrics`, P-08 step 1) is in review; next are the features (P-07) and the two models.
 2. Done 2026-11-24: data foundation and Crew 1 released to `main` (#14, #23); histories aligned (#15, #24).
 3. Done 2026-11-23: spend limit set, local `.env` created, model verified with one approved call (T-01).
 4. Run the data steps yourself: `uv run python -m src.data.cleaning` (validation, ETL and cleaning; writes `artifacts/clean/`), then `uv run python -m src.data.contract` (writes `dataset_contract.json` and `contract_check.json`). Single steps: `src.data.validation`, `src.data.etl`, `src.data.inspect_m5`. All outputs are git-ignored; `clean_data.csv` and `long_data.csv` are row-level M5 data and are never committed.
