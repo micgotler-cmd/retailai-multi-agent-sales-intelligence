@@ -176,6 +176,26 @@ Window 3 is the validation window of T-09. At every origin, preprocessing, featu
 | Rolling | Mean/std of past sales, past-only | Only windows ending before the forecast origin |
 | Price | `sell_price` | No. Future prices are unknown (D-07) |
 
+### Implemented feature set (P-07)
+
+Defined once in `src/ml/feature_spec.py`; the Feature Engineer, Gate 2 and the Model Trainer all read it (no separate manifest file, since the set is fixed). For target day t, with sales available only up to t - 28:
+
+| Group | Features |
+|---|---|
+| Lags (same weekday) | `lag_28`, `lag_35`, `lag_42` |
+| Rolling, ending at t - 28 | `roll_mean_7` (days t-34 to t-28), `roll_mean_28` and `roll_std_28` (days t-55 to t-28) |
+| Calendar | `day_of_week`, `month`, `day_of_month` |
+| Known in advance | `event_type_1` (`none` when empty), `snap` (the store's state), `store_closed` (25 December rule, T-13) |
+| Descriptors | `item_id`, `dept_id`, `cat_id` (categorical) |
+
+One global model per variant covers all 20 items. `features.csv` also holds the keys (`store_id`, `item_id`, `date`), the metadata `day` and `demand_group`, and the target `units_sold` (empty for d_1942 to d_1969). Notes:
+
+- **`demand_group` is metadata, not a feature.** T-03 assigns the groups from d_1 to d_1885, which overlaps the first two backtest windows, so using the label as a model input could leak. It is used only to report scores.
+- **`store_closed` for future days** follows the date rule (25 December); no future day in d_1942 to d_1969 falls on it. Event and SNAP values for all days come from `calendar.csv` (T-22).
+- **Missing history is never imputed.** A feature whose look-back reaches before an item's first sale is empty, and `training_rows` leaves those days out. A gap, a missing value or a negative value inside an item's history stops the build. Every forecast-window day has complete features (every item has at least 722 days of history).
+- **Leakage checks:** `check_spec` rejects any look-back shorter than the horizon; tests change sales after t - 28, after an origin or for another item and confirm the features, training rows and forecast rows do not change.
+- `features.csv` holds the test-period actuals as the target (local only, git-ignored, T-04).
+
 ### Multi-step strategy (D-06, Approved)
 
 A 28-day horizon means a 7-day lag is unknown for days 8-28. Approved approach: **direct forecasting with horizon-safe features.** Use only lags and rolling windows computed from data at least 28 days before each target date (for example lag 28, 35, 42 and rolling statistics shifted by 28), plus calendar and SNAP features. One model per variant, no recursive error accumulation, and every feature is available when the forecast is made. A recursive variant (7/14-day lags with predicted values fed back) is not planned.
