@@ -43,3 +43,22 @@ def one_item(values: list[float], first_day: int = 1, item_id: str = "FOODS_1_00
             "units_sold": values,
         }
     )
+
+
+def with_ids(clean: pd.DataFrame) -> pd.DataFrame:
+    return clean.assign(
+        dept_id=clean["item_id"].str[:7], cat_id=clean["item_id"].str[:5], state_id="CA"
+    )
+
+
+def make_calendar(n_days: int = N_DAYS + 28) -> pd.DataFrame:
+    days = np.arange(1, n_days + 1)
+    return pd.DataFrame(
+        {
+            "date": [day_date(int(d)) for d in days],
+            "d": [f"d_{d}" for d in days],
+            "event_type_1": [("Sporting" if d % 50 == 0 else None) for d in days],
+            "snap": (days % 10 == 0).astype(int),
+            "day": days,
+        }
+    )

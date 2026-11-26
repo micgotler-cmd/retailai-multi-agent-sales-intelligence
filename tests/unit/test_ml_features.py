@@ -15,29 +15,10 @@ from src.ml import features as ft
 from src.ml.feature_spec import FeatureError
 from src.ml.windows import backtest_windows, final_test_window, future_window
 from tests.conftest import ITEMS, N_DAYS, make_scope, write_scope_file
-from tests.ml_data import day_date, make_clean
+from tests.ml_data import day_date, make_calendar, make_clean, with_ids
 
 FUTURE_LAST = N_DAYS + 28
 ITEM = ITEMS[0]
-
-
-def with_ids(clean: pd.DataFrame) -> pd.DataFrame:
-    return clean.assign(
-        dept_id=clean["item_id"].str[:7], cat_id=clean["item_id"].str[:5], state_id="CA"
-    )
-
-
-def make_calendar(n_days: int = FUTURE_LAST) -> pd.DataFrame:
-    days = np.arange(1, n_days + 1)
-    return pd.DataFrame(
-        {
-            "date": [day_date(int(d)) for d in days],
-            "d": [f"d_{d}" for d in days],
-            "event_type_1": [("Sporting" if d % 50 == 0 else None) for d in days],
-            "snap": (days % 10 == 0).astype(int),
-            "day": days,
-        }
-    )
 
 
 @pytest.fixture
