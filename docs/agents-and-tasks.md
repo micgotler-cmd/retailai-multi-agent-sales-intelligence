@@ -88,7 +88,7 @@ To allow parallel work, each handoff has an agreed file format. These are frozen
 | `dataset_contract.json` | A | B, Flow | See [data-and-ml.md](data-and-ml.md) |
 | `quality_report.json` | A | UI | List of checks with status and message |
 | Test fixture | A | A, B, Flow | Small synthetic M5-shaped dataset under `tests/` (not real M5 rows) |
-| `features.csv` | B | B, Flow | Keys, target and feature columns; list of required features recorded for Gate 2 |
+| `features.csv` | B | B, Flow | Keys, target and feature columns; the required features are defined in `src/ml/feature_spec.py`, which Gate 2 and the Model Trainer also use |
 | `test_forecast.csv` | B | Flow, UI (Model Evaluation) | Forecast for the test window d_1914 to d_1941 from origin d_1913: `run_id`, `store_id`, `item_id`, `forecast_date`, `model`, `predicted_units`. Used only for the final evaluation; local, git-ignored (T-22) |
 | `forecast.csv` | B | Flow, UI, Agent 7, Repository | Future forecast for d_1942 to d_1969 from origin d_1941: `run_id`, `store_id`, `item_id`, `forecast_date`, `predicted_units`, `model_version` (matches [database-design.md](database-design.md)) |
 | `metrics.json` | B | Flow, UI, Agent 7 | MAE and RMSE overall, per item and per demand group for the baseline and both models, from the test holdout; backtest results per window; split boundaries, origins and seeds |
